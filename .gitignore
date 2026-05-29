@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+dist/
+
+# Environment (NEVER commit these)
+.env
+.env.local
+.env.production
+firebase-applet-config.json
+firebase-service-account.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build artifacts
+dist/
+build/
+.vite/
+
+# OS files
+.DS_Store
+Thumbs.db

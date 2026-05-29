@@ -1,0 +1,30 @@
+{
+  "firestore": {
+    "indexes": [
+      {
+        "collectionGroup": "attempts",
+        "queryScope": "COLLECTION",
+        "fields": [
+          { "fieldPath": "userId", "order": "ASCENDING" },
+          { "fieldPath": "attemptDate", "order": "DESCENDING" }
+        ]
+      },
+      {
+        "collectionGroup": "live_sessions",
+        "queryScope": "COLLECTION",
+        "fields": [
+          { "fieldPath": "datetime", "order": "ASCENDING" }
+        ]
+      },
+      {
+        "collectionGroup": "session_bookings",
+        "queryScope": "COLLECTION",
+        "fields": [
+          { "fieldPath": "userId", "order": "ASCENDING" },
+          { "fieldPath": "sessionId", "order": "ASCENDING" }
+        ]
+      }
+    ],
+    "fieldOverrides": []
+  }
+}

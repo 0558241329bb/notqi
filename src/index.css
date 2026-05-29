@@ -1,0 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@200..1000&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Cairo", ui-sans-serif, system-ui, sans-serif;
+
+  /* Category Themes */
+  --color-primary: var(--app-primary);
+  --color-secondary: var(--app-secondary);
+  --color-accent: var(--app-accent);
+}
+
+:root {
+  --app-primary: #3b82f6; /* default blue */
+  --app-secondary: #1e293b;
+  --app-accent: #f59e0b;
+}
+
+.theme-children {
+  --app-primary: #9d4edd;
+  --app-secondary: #ff9e00;
+  --app-accent: #ff4d6d;
+}
+
+.theme-students {
+  --app-primary: #0077b6;
+  --app-secondary: #2d6a4f;
+  --app-accent: #0077b6;
+}
+
+.theme-adults {
+  --app-primary: #14213d;
+  --app-secondary: #2a9d8f;
+  --app-accent: #2a9d8f;
+}
+
+.theme-non-native {
+  --app-primary: #fb8500;
+  --app-secondary: #fefae0;
+  --app-accent: #fb8500;
+}
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+  body {
+    @apply bg-slate-50 text-slate-900 min-h-screen font-sans;
+  }
+}
+

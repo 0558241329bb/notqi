@@ -1,0 +1,10 @@
+{
+  "name": "نطقي (Natqi)",
+  "description": "An AI-powered Arabic pronunciation training platform with specialized paths for children, students, adults, and non-native speakers.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
