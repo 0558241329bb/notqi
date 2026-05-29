@@ -16,17 +16,28 @@ import { GoogleGenAI } from "@google/genai";
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, addDoc, getDocs, query, where, serverTimestamp, setDoc, doc, getDoc, orderBy, limit, setLogLevel } from "firebase/firestore";
 // AI Studio fallback support
-import fileFirebaseConfig from "./firebase-applet-config.json";
+import fs from 'fs';
+import path from 'path';
 
 const isProd = process.env.NODE_ENV === 'production';
 
+let fileFirebaseConfig: any = {};
+try {
+  const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
+  if (fs.existsSync(configPath)) {
+    fileFirebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+  }
+} catch (e) {
+  // Ignored
+}
+
 const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY || (fileFirebaseConfig as any).apiKey,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN || (fileFirebaseConfig as any).authDomain,
-  projectId: process.env.FIREBASE_PROJECT_ID || (fileFirebaseConfig as any).projectId,
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET || (fileFirebaseConfig as any).storageBucket,
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || (fileFirebaseConfig as any).messagingSenderId,
-  appId: process.env.FIREBASE_APP_ID || (fileFirebaseConfig as any).appId,
+  apiKey: process.env.FIREBASE_API_KEY || fileFirebaseConfig.apiKey || "",
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN || fileFirebaseConfig.authDomain || "",
+  projectId: process.env.FIREBASE_PROJECT_ID || fileFirebaseConfig.projectId || "",
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET || fileFirebaseConfig.storageBucket || "",
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || fileFirebaseConfig.messagingSenderId || "",
+  appId: process.env.FIREBASE_APP_ID || fileFirebaseConfig.appId || "",
 };
 
 // تحقق من المتغيرات الضرورية عند بدء التشغيل
