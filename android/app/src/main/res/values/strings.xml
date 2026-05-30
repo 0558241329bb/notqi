@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">نطقي</string>
+    <string name="title_activity_main">نطقي</string>
+    <string name="package_name">com.notqi.app</string>
+    <string name="custom_url_scheme">com.notqi.app</string>
+</resources>

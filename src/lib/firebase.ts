@@ -11,5 +11,5 @@ const app = initializeApp(firebaseConfig);
 // The app will break without providing the firestoreDatabaseId
 export const db = initializeFirestore(app, {
   experimentalAutoDetectLongPolling: true,
-}, firebaseConfig.firestoreDatabaseId);
+}, (firebaseConfig as any).firestoreDatabaseId);
 export const auth = getAuth(app);

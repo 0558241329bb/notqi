@@ -7,6 +7,22 @@ import React, { useState, useEffect, useRef, useCallback, Component } from 'reac
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import confetti from 'canvas-confetti';
 
+const getApiUrl = () => {
+  const isCapacitor = typeof window !== 'undefined' && (
+    (window as any).Capacitor !== undefined ||
+    window.location.protocol === 'capacitor:' ||
+    (window.location.protocol === 'http:' && window.location.hostname === 'localhost' && !window.location.port) ||
+    (window.location.hostname === 'localhost' && window.location.pathname.includes('android_asset'))
+  );
+
+  if (isCapacitor) {
+    return (import.meta as any).env?.VITE_API_URL || 'https://notqi.onrender.com';
+  }
+  return '';
+};
+
+export const API_URL = getApiUrl();
+
 /** Utility for Tailwind class merging */
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -114,7 +130,7 @@ const Login = () => {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(API_URL + '/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -224,7 +240,7 @@ const Register = () => {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch(API_URL + '/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -434,7 +450,7 @@ const Home = () => {
 
     const fetchSuggestion = async () => {
       try {
-        const res = await fetch(`/api/exercises/suggest?category=${user.category}&level=${user.level}`, {
+        const res = await fetch(API_URL + `/api/exercises/suggest?category=${user.category}&level=${user.level}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -630,7 +646,7 @@ const Progress = () => {
     if (!user) return;
     const fetchProgress = async () => {
       try {
-        const res = await fetch(`/api/progress/${user.id}`, {
+        const res = await fetch(API_URL + `/api/progress/${user.id}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok) throw new Error('Failed to fetch');
@@ -646,7 +662,7 @@ const Progress = () => {
     const fetchInsights = async () => {
       if (!user?.id || !token) return;
       try {
-        const res = await fetch(`/api/progress/${user.id}/insights`, {
+        const res = await fetch(API_URL + `/api/progress/${user.id}/insights`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
@@ -1000,8 +1016,7 @@ const Training = () => {
     setAudioUrl(null);
     setRecordingTime(0);
     try {
-      const res = await fetch(
-        `/api/exercises/suggest?category=${user.category}&level=${user.level}`,
+      const res = await fetch(API_URL + `/api/exercises/suggest?category=${user.category}&level=${user.level}`,
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
       const data = await res.json();
@@ -1018,9 +1033,9 @@ const Training = () => {
     const exId = searchParams.get('id');
     const fetchExercise = async () => {
       try {
-        const url = exId 
+        const url = API_URL + (exId 
           ? `/api/exercises/suggest?id=${exId}`
-          : `/api/exercises/suggest?category=${user?.category}&level=${user?.level}`;
+          : `/api/exercises/suggest?category=${user?.category}&level=${user?.level}`);
         const res = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -1319,7 +1334,7 @@ const Training = () => {
     formData.append('recognizedText', recognizedText.trim());
 
     try {
-      const res = await fetch('/api/analyze', {
+      const res = await fetch(API_URL + '/api/analyze', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -1748,7 +1763,7 @@ const Library = () => {
     const fetchLibrary = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/library?category=${activeTab}`, {
+        const res = await fetch(API_URL + `/api/library?category=${activeTab}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
@@ -1917,7 +1932,7 @@ const Sessions = () => {
 
   const fetchSessions = async () => {
     try {
-      const res = await fetch('/api/sessions', {
+      const res = await fetch(API_URL + '/api/sessions', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -1936,7 +1951,7 @@ const Sessions = () => {
   const handleBook = async (sessionId: string) => {
     setBookingLoading(sessionId);
     try {
-      const res = await fetch('/api/sessions/book', {
+      const res = await fetch(API_URL + '/api/sessions/book', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2135,7 +2150,7 @@ const SettingsPage = () => {
     setSuccessMsg('');
 
     try {
-      const res = await fetch('/api/user/profile', {
+      const res = await fetch(API_URL + '/api/user/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -2164,7 +2179,7 @@ const SettingsPage = () => {
     setSuccessMsg('');
 
     try {
-      const res = await fetch('/api/user/settings', {
+      const res = await fetch(API_URL + '/api/user/settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

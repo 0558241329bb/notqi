@@ -17,7 +17,6 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, collection, addDoc, getDocs, query, where, serverTimestamp, setDoc, doc, getDoc, orderBy, limit, setLogLevel } from "firebase/firestore";
 // AI Studio fallback support
 import fs from 'fs';
-import path from 'path';
 
 const isProd = process.env.NODE_ENV === 'production';
 
