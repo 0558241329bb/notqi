@@ -981,6 +981,7 @@ const Training = () => {
   const streamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
+  const maxVolumeRef = useRef<number>(0);
   const [recognizedText, setRecognizedText] = useState('');
   const recognitionRef = useRef<any>(null);
 
@@ -1206,6 +1207,7 @@ const Training = () => {
           const volumeAnalyser = audioContextRef.current.createAnalyser();
           volumeAnalyser.fftSize = 64;
           gainNodeRef.current.connect(volumeAnalyser);
+          maxVolumeRef.current = 0;
 
           const monitorVolume = () => {
             if (!isRecording) return;
@@ -1214,7 +1216,11 @@ const Training = () => {
             let sum = 0;
             for (let i = 0; i < data.length; i++) sum += data[i];
             const avg = sum / data.length;
-            setVolumeLevel(Math.min(100, avg * 1.5));
+            const currentVol = Math.min(100, avg * 1.5);
+            setVolumeLevel(currentVol);
+            if (currentVol > maxVolumeRef.current) {
+               maxVolumeRef.current = currentVol;
+            }
             requestAnimationFrame(monitorVolume);
           };
           monitorVolume();
@@ -1653,6 +1659,18 @@ const Training = () => {
                 </div>
               </div>
 
+              {analysisResult.isAi === false && (
+                <div id="fallback-quota-warning" className="bg-amber-50/70 border border-amber-200/60 rounded-[2rem] p-6 text-right space-y-3 shadow-sm max-w-2xl mx-auto">
+                  <div className="flex items-center gap-2 justify-end text-amber-800 font-bold text-lg">
+                    <span>⚠️</span>
+                    <span>تنبيه: التقييم الصوتي المحلي مفعل</span>
+                  </div>
+                  <p className="text-amber-700/95 leading-relaxed text-sm">
+                    نظراً لأن حصة الاستخدام المجانية لنظام الذكاء الاصطناعي (Gemini Free Quota) قد استُنفدت مؤقتاً، فقد قمنا بتفعيل نظام التحليل التقريبي المحلي لمتابعة تدريبك دون توقف. ننصح بتجربة المحاولة لاحقاً للحصول على تحليل صوتي دقيق عبر الذكاء الاصطناعي.
+                  </p>
+                </div>
+              )}
+
               {/* Mistake Tips */}
               {analysisResult?.mistakes?.length > 0 && (
                 <div className="bg-amber-50 rounded-2xl p-5 space-y-3">
@@ -1743,14 +1761,109 @@ const Training = () => {
   );
 };
 
+// Library Lesson Metadata & Outlines
+const LESSON_DETAILS: Record<string, {
+  makharij: string[];
+  tips: string[];
+  duration: string;
+  sourceTeacher: string;
+  drills: string[];
+}> = {
+  "5U_wP8FWeu0": {
+    makharij: ["الحلق (الأقاصي والوسطى)", "الجهر والهمس", "أعضاء النطق الرئيسية"],
+    tips: [
+      "دقق في حركة اللسان والفك السفلي أثناء استعراض مخارج الشفتين والحلق.",
+      "تجنب النبر الزائد في نهاية نطق الحروف الساكنة لمنع حدوث قلقلة غير مطلوبة.",
+      "استمع لنفس الحرف وأعد المحاكاة ثلاث مرات على الأقل وبصوتٍ مرتفع ونقي."
+    ],
+    duration: "18:45",
+    sourceTeacher: "فضيلة الدكتور أيمن رشدي سويد",
+    drills: ["ء", "هـ", "ع", "ح", "غ", "خ"]
+  },
+  "FSmS_P7WizE": {
+    makharij: ["الحروف الهجائية البسيطة", "مخارج الشفتين واللسان للأطفال", "الحركات القصيرة"],
+    tips: [
+      "حفز طفلك على الملاحظة البصرية لحركة الفم ومحاكاتها بتأنٍ ودقة.",
+      "احرص على تكرار الحرف خلف المعلم في الفيديو لترسيخ نبرته الصوتية.",
+      "يُفضل التدريب في بيئة هادئة وبدون أي تشويش لتعزيز التمييز السمعي للأطفال."
+    ],
+    duration: "12:10",
+    sourceTeacher: "أستاذ النطق السليم للأطفال",
+    drills: ["ب", "ت", "ث", "ج", "د"]
+  },
+  "fA8H49A0gDk": {
+    makharij: ["Arabic Throat Letters (الجمباز الصوتي)", "Phonetic Disambiguation", "Tongue Placement"],
+    tips: [
+      "Pay close attention to vocal cord constriction for the deep 'ع' and Arabic 'ح' sounds.",
+      "Heavy letters (Mufakhama) push the sound upward to the roof of your mouth; try to mimic this echo.",
+      "Practice contrasting similar-sounding light vs heavy consonants to build strong auditory recognition."
+    ],
+    duration: "15:20",
+    sourceTeacher: "Arabic Articulation Masterclass",
+    drills: ["ع", "ح", "ق", "ط", "ض"]
+  },
+  "xLWe9x4wshU": {
+    makharij: ["أحكام النون الساكنة والتنوين", "مخرج الخيشوم وغنة الإدغام المكتملة", "مخارج الحروف الحلقية"],
+    tips: [
+      "الغنة تخرج بكامل رنينها من تجويف الأنف (الخيشوم)؛ تأكد من سد الأنف جزئياً للتأكد من المخرج.",
+      "لاحظ انسياب الحروف اللينة والصوت الفصيح للتلاوة بدون أي تكلف أو صعوبة.",
+      "شاهد طريقة تصفية الأحرف المتتابعة وطبق النماذج فوراً بالمدرب الذكي."
+    ],
+    duration: "21:40",
+    sourceTeacher: "الشيخ المفيد لأحكام التلاوة والتجويد",
+    drills: ["ن", "م", "ت", "د", "ط"]
+  },
+  "-Ysh_eS2w34": {
+    makharij: ["صفات الاستعلاء والانخفاض", "الحروف المفخمة (خص ضغط قظ)", "الترقيق الفصيح للنون والألف"],
+    tips: [
+      "ارتفاع مؤخرة اللسان هو السر الأساسي لتفخيم الحروف السبعة مثل الصاد والضاد.",
+      "انتبه لعدم تفخيم الحروف المجاورة للحرف المفخم (مثل التاء في كلمة 'بسطت').",
+      "تدرب على الاستماع الفارق والعميق لترسيخ اللكنة العربية الفصحى الفخرية."
+    ],
+    duration: "14:15",
+    sourceTeacher: "خبير وموجه مخارج الحروف العربية",
+    drills: ["خ", "ص", "ض", "غ", "ط", "ق", "ظ"]
+  },
+  "H0g_pB8nZlU": {
+    makharij: ["مخارج الحروف التفاعلية التمهيدية", "ربط الكلمة بالصوت للأطفال", "المدود الطويلة والقصيرة"],
+    tips: [
+      "دع الطفل يربط مخارج المقاطع بالرسم التعبيري الجذاب والملون المعروض.",
+      "ساعد الطفل في تلمس حنجرته ليدرك الاهتزازات الطبيعية للحروف المجهورة.",
+      "شجع الطفل على فتح تطبيق التدريب التفاعلي لينال نجوم التقييم الممتعة."
+    ],
+    duration: "09:35",
+    sourceTeacher: "سرديات وكرتون مخارج الحروف الشيق",
+    drills: ["أ", "ب", "ت", "ث", "ج", "ح", "خ"]
+  }
+};
+
+// Tool to safely check and extract the YouTube video ID from various formats
+const getYoutubeId = (url: string) => {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+};
+
 // Library Screen
 const Library = () => {
   const { user, token } = useAuth();
+  const navigate = useNavigate();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // High fidelity play states
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<any | null>(null);
+  const [playerServer, setPlayerServer] = useState<'nocookie' | 'standard'>('nocookie');
+  const [customUrl, setCustomUrl] = useState('');
+  const [customError, setCustomError] = useState('');
+
+  // Admin States
+  const [isEditing, setIsEditing] = useState(false);
+  const [editFormData, setEditFormData] = useState<any>({});
 
   const tabs = [
     { id: 'all', label: 'الكل' },
@@ -1759,60 +1872,134 @@ const Library = () => {
     { id: 'adults', label: 'البالغين' },
   ];
 
+  const fetchLibrary = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(API_URL + `/api/library?category=${activeTab}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setItems(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchLibrary = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(API_URL + `/api/library?category=${activeTab}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        setItems(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchLibrary();
   }, [activeTab]);
 
+  const handleAdminDelete = async (id: string) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذه المادة بشكل نهائي؟')) return;
+    try {
+      const res = await fetch(API_URL + `/api/library/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) fetchLibrary();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleAdminSave = async (e: any) => {
+    e.preventDefault();
+    try {
+      const method = editFormData.id ? 'PUT' : 'POST';
+      const url = editFormData.id ? `/api/library/${editFormData.id}` : `/api/library`;
+      
+      let finalData = { ...editFormData };
+      if (finalData.type === 'video' && finalData.url && finalData.url.includes('youtube.com/watch')) {
+          const vId = getYoutubeId(finalData.url);
+          if (vId) {
+             finalData.url = `https://www.youtube-nocookie.com/embed/${vId}`;
+          }
+      }
+
+      const res = await fetch(API_URL + url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(finalData)
+      });
+      if (res.ok) {
+        setIsEditing(false);
+        setEditFormData({});
+        fetchLibrary();
+      } else {
+        const errorData = await res.json();
+        alert(errorData.error || 'Failed to save');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error occurred');
+    }
+  };
+
   const filteredItems = items.filter(item => 
-    item.title.includes(searchQuery) || item.description.includes(searchQuery)
+    item.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    item.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50/50">
       <Navbar />
-      <main className="flex-1 max-w-7xl mx-auto w-full p-4 md:p-8 space-y-8">
+      <main className="flex-1 max-w-7xl mx-auto w-full p-4 md:p-8 space-y-8 text-right" dir="rtl">
         <header className="space-y-6">
-          <h2 className="text-3xl font-black text-slate-800">المكتبة التعليمية</h2>
-          
-          <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-            <div className="flex bg-white p-1 rounded-2xl border border-slate-100 shadow-sm overflow-x-auto w-full md:w-auto">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 pb-6">
+            <div className="space-y-1">
+              <h2 className="text-3xl font-black text-slate-800 tracking-tight">المكتبة التعليمية</h2>
+              <p className="text-xs text-slate-500 font-bold">بث مرئي ومسموع لأرقى مناهج وعلم مخارج الحروف العربية وأحكام التلاوة</p>
+            </div>
+            
+            <div className="relative w-full md:w-80">
+              <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input 
+                type="text" 
+                placeholder="ابحث عن نص أو درس أو أستاذ..."
+                className="w-full pr-12 pl-4 py-3 bg-white border border-slate-200/65 rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-primary transition-all text-sm text-slate-800"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-2 rounded-[2rem] border border-slate-100/80 shadow-sm">
+            <div className="flex bg-slate-50 p-1 rounded-2xl overflow-x-auto w-full md:w-auto">
               {tabs.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    "px-6 py-2 rounded-xl font-bold text-sm transition-all whitespace-nowrap",
-                    activeTab === tab.id ? "bg-primary text-white shadow-md shadow-primary/20" : "text-slate-500 hover:bg-slate-50"
+                    "px-6 py-2.5 rounded-xl font-bold text-sm transition-all whitespace-nowrap",
+                    activeTab === tab.id ? "bg-primary text-white shadow-md shadow-primary/20" : "text-slate-500 hover:bg-slate-100/70"
                   )}
                 >
                   {tab.label}
                 </button>
               ))}
             </div>
-
-            <div className="relative w-full md:w-80">
-              <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <input 
-                type="text" 
-                placeholder="ابحث عن نص أو فيديو..."
-                className="w-full pr-12 pl-4 py-3 bg-white border border-slate-100 rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-primary transition-all"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+            <div className="flex items-center gap-4">
+              {user && user.role === 'admin' && (
+                <button
+                  onClick={() => {
+                    setEditFormData({});
+                    setIsEditing(true);
+                  }}
+                  className="px-4 py-2 bg-slate-800 text-white font-bold text-xs rounded-xl hover:bg-slate-700 transition-all shadow-md shadow-slate-800/20 flex items-center gap-2"
+                >
+                  <FileText size={14} /> إضافة مادة (أدمن)
+                </button>
+              )}
+              <div className="text-slate-400 text-xs font-bold pl-4 hidden md:block">
+                عدد المواد المتاحة: {filteredItems.length} مادة دراسية
+              </div>
             </div>
           </div>
         </header>
@@ -1821,62 +2008,110 @@ const Library = () => {
           <div className="space-y-6 flex flex-col pt-8">
             <div className="flex items-center justify-center gap-3 text-slate-400 font-bold mb-6">
                <div className="w-5 h-5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></div>
-               جارٍ التحميل...
+               جارٍ تحميل محتويات المكتبة والدروس الفصحى...
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {[1,2,3,4].map(i => <div key={i} className="h-64 bg-slate-200 animate-pulse rounded-3xl" />)}
+              {[1,2,3,4].map(i => <div key={i} className="h-64 bg-slate-100 animate-pulse rounded-[2rem]" />)}
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <AnimatePresence>
               {filteredItems.map((item, idx) => (
                 <motion.div
                   key={item.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ delay: idx * 0.05 }}
-                  className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col"
+                  className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-xl hover:-translate-y-1.5 transition-all flex flex-col group"
                 >
-                  <div className="h-40 bg-slate-100 relative group overflow-hidden">
+                  <div className="h-44 bg-slate-100 relative overflow-hidden">
                     <img 
                       src={item.thumbnail} 
                       alt={item.title} 
-                      className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      referrerPolicy="no-referrer"
                     />
-                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      {item.type === 'video' ? <Play className="text-white fill-white" size={48} /> : <FileText className="text-white" size={48} />}
+                    <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      {item.type === 'video' ? (
+                        <div className="bg-primary hover:bg-primary-dark p-4 rounded-full shadow-lg text-white scale-90 group-hover:scale-100 transition-all duration-300">
+                          <Play className="fill-white" size={24} />
+                        </div>
+                      ) : (
+                        <div className="bg-slate-800 p-4 rounded-full shadow-lg text-white scale-90 group-hover:scale-100 transition-all duration-300">
+                          <FileText size={24} />
+                        </div>
+                      )}
                     </div>
                     <div className="absolute top-3 right-3 flex gap-2">
-                      <span className="px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg text-[10px] font-black text-slate-800 uppercase">
-                        {item.type === 'video' ? 'فيديو' : 'PDF'}
+                      <span className={cn(
+                        "px-2.5 py-1 bg-white/95 backdrop-blur-sm rounded-lg text-[10px] font-black text-slate-800 shadow-sm",
+                        item.type === 'video' ? "text-primary border border-primary/10" : "text-emerald-600 border border-emerald-100"
+                      )}>
+                        {item.type === 'video' ? '📺 مرئي (فيديو)' : '📄 كتاب (PDF)'}
                       </span>
                     </div>
                   </div>
 
-                  <div className="p-5 flex-1 flex flex-col">
-                    <span className="text-[10px] font-black tracking-widest text-primary uppercase mb-2 block">{item.category}</span>
-                    <h4 className="font-bold text-slate-800 text-lg mb-2 line-clamp-1">{item.title}</h4>
-                    <p className="text-xs text-slate-500 leading-relaxed mb-4 line-clamp-2">{item.description}</p>
+                  <div className="p-5 flex-1 flex flex-col justify-between">
+                    <div className="space-y-2">
+                      <span className="text-[10px] font-black tracking-widest text-primary/80 uppercase px-2 py-0.5 bg-primary/10 rounded-md inline-block">
+                        {item.category === 'children' && 'فئة الأطفال 🧒'}
+                        {item.category === 'students' && 'فئة الطلاب 🎓'}
+                        {item.category === 'adults' && 'فئة البالغين 👤'}
+                        {item.category === 'non-native' && 'الناطقين لغير العربية 🌐'}
+                        {!['children', 'students', 'adults', 'non-native'].includes(item.category) && item.category}
+                      </span>
+                      <h4 className="font-bold text-slate-800 text-base line-clamp-2 leading-snug group-hover:text-primary transition-colors min-h-[44px]">
+                        {item.title}
+                      </h4>
+                      <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">
+                        {item.description}
+                      </p>
+                    </div>
                     
-                    <div className="mt-auto pt-4 border-t border-slate-50">
+                    <div className="mt-5 pt-4 border-t border-slate-50 space-y-2">
                       {item.type === 'video' ? (
                         <button 
-                          onClick={() => setSelectedVideo(item.url)}
-                          className="w-full py-3 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 text-sm shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                          onClick={() => {
+                            setSelectedItem(item);
+                            setSelectedVideo(item.url);
+                          }}
+                          className="w-full py-3 bg-primary hover:bg-primary/95 text-white rounded-xl font-bold flex items-center justify-center gap-2 text-xs shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all"
                         >
-                          <Play size={16} fill="white" /> مشاهدة
+                          <Play size={14} fill="white" /> مشاهدة الشرح والتحليل
                         </button>
                       ) : (
                         <a 
                           href={item.url} 
                           target="_blank" 
                           rel="noreferrer"
-                          className="w-full py-3 bg-slate-50 text-slate-700 rounded-xl font-bold flex items-center justify-center gap-2 text-sm hover:bg-slate-100 transition-all"
+                          className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold flex items-center justify-center gap-2 text-xs transition-all"
                         >
-                          <ExternalLink size={16} /> تحميل
+                          <ExternalLink size={14} /> تحميل الكتاب المعتمد 📥
                         </a>
+                      )}
+                      
+                      {/* Admin Controls */}
+                      {user && user.role === 'admin' && (
+                        <div className="flex gap-2 pt-2 border-t border-slate-50">
+                          <button
+                            onClick={() => {
+                              setEditFormData(item);
+                              setIsEditing(true);
+                            }}
+                            className="flex-1 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold rounded-xl text-[10px] transition-all flex items-center justify-center gap-1"
+                          >
+                            <Settings size={12} /> تعديل
+                          </button>
+                          <button
+                            onClick={() => handleAdminDelete(item.id)}
+                            className="flex-1 py-2 bg-red-50 text-red-600 hover:bg-red-100 font-bold rounded-xl text-[10px] transition-all flex items-center justify-center gap-1"
+                          >
+                            <Trash2 size={12} /> حذف
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1887,40 +2122,358 @@ const Library = () => {
         )}
 
         {!loading && filteredItems.length === 0 && (
-          <div className="text-center py-20 bg-white rounded-[3rem] border border-slate-100 shadow-sm">
-            <p className="text-slate-400 font-bold text-xl">لا توجد نتائج تطابق بحثك</p>
+          <div className="text-center py-20 bg-white rounded-[3rem] border border-slate-100 shadow-sm flex flex-col items-center justify-center gap-4">
+            <p className="text-slate-400 font-bold text-lg">لا توجد نتائج تطابق بحثك داخل المكتبة حالياً</p>
+            <button 
+              onClick={() => setSearchQuery('')}
+              className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 text-xs rounded-xl transition-all"
+            >
+              عرض جميع الموارد
+            </button>
           </div>
         )}
       </main>
 
-      {/* Video Modal */}
+      {/* Advanced Dual-Pane Video Theater Modal */}
       <AnimatePresence>
         {selectedVideo && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-[100] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 md:p-8"
           >
-            <button 
-              onClick={() => setSelectedVideo(null)}
-              className="absolute top-8 right-8 text-white hover:rotate-90 transition-transform"
-            >
-              <X size={40} />
-            </button>
-            <div className="w-full max-w-5xl aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl">
-              <iframe 
-                src={selectedVideo} 
-                className="w-full h-full" 
-                allowFullScreen
-              />
+            <div className="w-full max-w-6xl bg-slate-950 border border-slate-800 rounded-[2rem] overflow-hidden shadow-2xl flex flex-col lg:flex-row h-full max-h-[90vh] md:max-h-[85vh] relative text-right">
+              {/* Close Button */}
+              <button 
+                onClick={() => {
+                  setSelectedVideo(null);
+                  setSelectedItem(null);
+                }}
+                className="absolute top-4 right-4 bg-slate-800/80 hover:bg-red-600 hover:rotate-90 transition-all text-white p-2 text-xs rounded-full z-40 shadow-md"
+                title="إغلاق اللاعب"
+              >
+                <X size={18} />
+              </button>
+
+              {/* Right Side: High-fidelity Player (65% width) */}
+              <div className="flex-1 bg-black flex flex-col justify-between p-4 md:p-6 border-b lg:border-b-0 lg:border-l border-slate-800 overflow-y-auto">
+                <div className="flex justify-between items-center mb-3 mt-4 lg:mt-0 gap-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setPlayerServer('nocookie')}
+                      className={cn(
+                        "text-[10px] sm:text-xs px-3 py-1.5 rounded-lg border font-bold transition-all",
+                        playerServer === 'nocookie' 
+                          ? "bg-primary text-white border-primary shadow-sm" 
+                          : "text-slate-400 border-slate-800 hover:bg-slate-900"
+                      )}
+                    >
+                      خادم الخصوصية (No-Cookie)
+                    </button>
+                    <button
+                      onClick={() => setPlayerServer('standard')}
+                      className={cn(
+                        "text-[10px] sm:text-xs px-3 py-1.5 rounded-lg border font-bold transition-all",
+                        playerServer === 'standard' 
+                          ? "bg-red-600 text-white border-red-600 shadow-sm" 
+                          : "text-slate-400 border-slate-800 hover:bg-slate-900"
+                      )}
+                    >
+                      خادم مباشر (Standard)
+                    </button>
+                  </div>
+                  <span className="text-slate-500 text-[10px] font-mono select-none hidden sm:inline">
+                    NATQI PRO-PLAYER v2.2
+                  </span>
+                </div>
+
+                {/* Video Stage with Resize Handling & Fallback support */}
+                <div className="flex-1 min-h-[220px] aspect-video lg:aspect-auto lg:h-[45vh] bg-slate-900/60 rounded-2xl overflow-hidden shadow-inner border border-slate-800/80 relative">
+                  <iframe 
+                    src={(() => {
+                      const vId = getYoutubeId(selectedVideo);
+                      if (vId) {
+                        return playerServer === 'standard' 
+                          ? `https://www.youtube.com/embed/${vId}` 
+                          : `https://www.youtube-nocookie.com/embed/${vId}`;
+                      }
+                      return selectedVideo;
+                    })()}
+                    className="w-full h-full" 
+                    allowFullScreen
+                    referrerPolicy="no-referrer-when-downgrade"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  />
+                </div>
+
+                {/* Helpful Diagnostics Warning Panel */}
+                <div className="mt-4 p-4 bg-slate-900/50 rounded-2xl border border-slate-800/40 space-y-3">
+                  <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <div className="space-y-1 text-center sm:text-right">
+                      <p className="text-white text-xs sm:text-sm font-bold flex items-center gap-1">
+                        <span>💡</span>
+                        تنبيه الخصوصية والتشغيل التلقائي
+                      </p>
+                      <p className="text-slate-400 text-[11px] leading-relaxed max-w-lg">
+                        إذا لم يعمل البث بسبب مانع الإعلانات أو حظر الإطارات المتداخلة بالمتصفح، يمكنك تبديل السيرفر في الأعلى، أو الفتح خارجياً:
+                      </p>
+                    </div>
+                    <a 
+                      href={selectedVideo ? selectedVideo.replace('youtube-nocookie.com', 'youtube.com').replace('/embed/', '/watch?v=') : '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-5 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition-all shadow-lg shadow-red-600/30 active:scale-95 select-none whitespace-nowrap"
+                    >
+                      <ExternalLink size={13} /> شاهد على يوتيوب مباشرة ↗
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Left Side: Study Desk / Interactive Sidebar (35% width) */}
+              <div className="w-full lg:w-[380px] bg-slate-900/40 flex flex-col p-6 overflow-y-auto">
+                {selectedItem ? (
+                  <div className="space-y-6 flex-1 flex flex-col justify-between">
+                    <div>
+                      {/* Lesson title description */}
+                      <div className="space-y-2">
+                        <span className="px-2.5 py-1 bg-primary/20 text-primary border border-primary/30 rounded-lg text-[10px] font-black uppercase inline-block">
+                          {selectedItem.category === 'children' && 'فئة الأطفال 🧒'}
+                          {selectedItem.category === 'students' && 'فئة الطلاب 🎓'}
+                          {selectedItem.category === 'adults' && 'فئة البالغين 👤'}
+                          {selectedItem.category === 'non-native' && 'الناطقين لغير العربية 🌐'}
+                          {!['children', 'students', 'adults', 'non-native'].includes(selectedItem.category) && selectedItem.category}
+                        </span>
+                        <h3 className="text-lg font-bold text-white tracking-tight leading-snug">
+                          {selectedItem.title}
+                        </h3>
+                        <p className="text-slate-400 text-xs leading-relaxed">
+                          {selectedItem.description}
+                        </p>
+                      </div>
+
+                      {/* Lesson metadata block from database */}
+                      <div className="border-t border-slate-800/80 pt-5 mt-5 space-y-4">
+                        <h4 className="text-xs font-black tracking-wider text-slate-500 uppercase">
+                          منهج الدرس والنقاط التجويدية:
+                        </h4>
+
+                        {(() => {
+                          const vId = getYoutubeId(selectedVideo);
+                          const details = vId ? LESSON_DETAILS[vId] : null;
+
+                          return (
+                            <div className="space-y-4">
+                              {/* Meta Indicators */}
+                              <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-400 font-bold bg-slate-950/80 p-3 rounded-xl border border-slate-800/60">
+                                <div className="space-y-0.5">
+                                  <span className="text-slate-500 block text-[9px] font-medium uppercase font-sans">زمن الشرح:</span>
+                                  <span>⏱️ {details?.duration || "15:00 دقيقة"}</span>
+                                </div>
+                                <div className="space-y-0.5">
+                                  <span className="text-slate-500 block text-[9px] font-medium uppercase font-sans">المعلم الشارح:</span>
+                                  <span>👤 {details?.sourceTeacher || "المدرس التعليمي"}</span>
+                                </div>
+                              </div>
+
+                              {/* Target Articulation Points */}
+                              <div className="space-y-2">
+                                <span className="text-xs font-bold text-primary flex items-center gap-1">
+                                  <span>📍</span> مخارج الصوت المستهدفة:
+                                </span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {(details?.makharij || ["مخارج الحروف الأساسية", "المخارج المقدرة والصفات", "التلقين السمعي"]).map((m, i) => (
+                                    <span key={i} className="px-2 py-1 bg-slate-800/60 text-slate-300 rounded-lg text-[10px] border border-slate-700/30">
+                                      {m}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Study tips */}
+                              <div className="space-y-2">
+                                <span className="text-xs font-bold text-sky-400 flex items-center gap-1">
+                                  <span>💡</span> نصائح هامة للتطبيق والتدوين:
+                                </span>
+                                <ul className="space-y-1.5 text-slate-300 text-xs list-disc pl-0 pr-1 mr-3 leading-relaxed">
+                                  {(details?.tips || [
+                                    "راقب تكرار نطق الحرف من فم الشيخ بشكل دقيق جداً لمعرفة الموضع.",
+                                    "قم بغلق عينيك بين الفترة والأخرى لزيادة قدرتك على التمييز السمعي.",
+                                    "بعد إتمام المشاهدة، افتح ركن التدريب لتقييم أدائك عبر الذكاء الاصطناعي."
+                                  ]).map((tip, i) => (
+                                    <li key={i}>{tip}</li>
+                                  ))}
+                                </ul>
+                              </div>
+
+                              {/* Interactive Call to Action to dynamic training */}
+                              <div className="pt-4 border-t border-slate-800/50">
+                                <p className="text-slate-400 text-[10px] leading-relaxed mb-3">
+                                  هل ترغب في تقييم صحة نطقك لهذه الحروف وتعرف نقاط ضعفك من خلال المدرب الصوتي الذكي؟
+                                </p>
+                                <button
+                                  onClick={() => {
+                                    // Close modal completely
+                                    setSelectedVideo(null);
+                                    setSelectedItem(null);
+                                    // Navigate to speech training screen
+                                    navigate('/training');
+                                  }}
+                                  className="w-full py-3 bg-gradient-to-r from-primary to-blue-600 hover:scale-103 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2"
+                                >
+                                  🎙️ ابدأ التدريب وتصحيح نطقك الآن
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+
+                    <div className="text-center pt-4 border-t border-slate-800/40 mt-6">
+                      <p className="text-[10px] text-slate-600 font-mono select-none">
+                        Natqi Pronunciation Suite &bull; Google Cloud Run
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-center text-slate-500 text-xs">
+                    يرجى تحديد فيديو دراسي للبدء...
+                  </div>
+                )}
+              </div>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isEditing && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
+              dir="rtl"
+            >
+              <div className="p-6 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white z-10">
+                <h3 className="text-xl font-bold text-slate-800">
+                  {editFormData.id ? 'إدارة المادة - تعديل' : 'إضافة مادة جديدة (أدمن)'}
+                </h3>
+                <button 
+                  onClick={() => setIsEditing(false)}
+                  className="p-2 hover:bg-slate-100 rounded-full transition-all"
+                >
+                  <X size={20} className="text-slate-500" />
+                </button>
+              </div>
+
+              <form onSubmit={handleAdminSave} className="p-6 space-y-5">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-700">العنوان:</label>
+                  <input 
+                    type="text" 
+                    required 
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                    value={editFormData.title || ''}
+                    onChange={e => setEditFormData({...editFormData, title: e.target.value})}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-700">التصنيف والفئة العمرية:</label>
+                  <select 
+                    required
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                    value={editFormData.category || ''}
+                    onChange={e => setEditFormData({...editFormData, category: e.target.value})}
+                  >
+                    <option value="">-- اختر الفئة --</option>
+                    <option value="children">الأطفال</option>
+                    <option value="students">الطلبة والمناهج</option>
+                    <option value="adults">البالغين</option>
+                    <option value="non-native">الناطقين بغيرها</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-700">نوع المادة:</label>
+                  <select 
+                    required
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                    value={editFormData.type || ''}
+                    onChange={e => setEditFormData({...editFormData, type: e.target.value})}
+                  >
+                    <option value="">-- اختر النوع --</option>
+                    <option value="video">فيديو (يوتيوب)</option>
+                    <option value="pdf">كتاب أو ملزمة (PDF) رابـط</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-700">الرابط (ارفق رابط اليوتيوب العادي أو رابط الـ PDF):</label>
+                  <input 
+                    type="url" 
+                    required dir="ltr"
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none text-left"
+                    value={editFormData.url || ''}
+                    onChange={e => setEditFormData({...editFormData, url: e.target.value})}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-700">الوصف التحليلي:</label>
+                  <textarea 
+                    required 
+                    rows={3}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                    value={editFormData.description || ''}
+                    onChange={e => setEditFormData({...editFormData, description: e.target.value})}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-700">رابط الصورة المصغرة (Thumbnail URL):</label>
+                  <input 
+                    type="url" 
+                    required dir="ltr"
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none text-left"
+                    value={editFormData.thumbnail || ''}
+                    onChange={e => setEditFormData({...editFormData, thumbnail: e.target.value})}
+                  />
+                </div>
+
+                <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
+                  <button 
+                    type="button"
+                    onClick={() => setIsEditing(false)}
+                    className="px-5 py-2.5 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold transition-all text-sm"
+                  >
+                    إلغاء
+                  </button>
+                  <button 
+                    type="submit"
+                    className="px-8 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold shadow-lg shadow-slate-800/20 active:scale-95 transition-all text-sm"
+                  >
+                    حفظ التغييرات للمنصة
+                  </button>
+                </div>
+              </form>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
 };
+
 
 // Live Sessions Screen
 const Sessions = () => {

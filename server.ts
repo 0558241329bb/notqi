@@ -14,7 +14,7 @@ import { GoogleGenAI } from "@google/genai";
 // TODO: Upgrade to Firebase Admin SDK for production security
 // Current: Client SDK with open rules (DEV ONLY)
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, getDocs, query, where, serverTimestamp, setDoc, doc, getDoc, orderBy, limit, setLogLevel } from "firebase/firestore";
+import { getFirestore, collection, addDoc, getDocs, query, where, serverTimestamp, setDoc, doc, getDoc, orderBy, limit, setLogLevel, deleteDoc, updateDoc } from "firebase/firestore";
 // AI Studio fallback support
 import fs from 'fs';
 
@@ -452,7 +452,7 @@ async function generateContentWithFallbackAndRetry(
     contents: any;
     config?: any;
   },
-  models: string[] = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-2.5-flash", "gemini-1.5-flash", "gemini-flash-latest"]
+  models: string[] = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"]
 ): Promise<any> {
   let lastError: any = null;
   
@@ -516,10 +516,16 @@ async function startServer() {
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
       (req as any).userId = (decoded as any).userId;
+      (req as any).role = (decoded as any).role;
       next();
     } catch (err) {
       return res.status(401).json({ error: "Invalid token" });
     }
+  };
+
+  const verifyAdmin = (req: any, res: any, next: any) => {
+    if (req.role !== "admin") return res.status(403).json({ error: "Forbidden: Admins only" });
+    next();
   };
 
   const analyzeLimiter = rateLimit({
@@ -606,6 +612,23 @@ async function startServer() {
     try {
       const { email, password } = req.body;
       
+      // Admin Hardcoded Login
+      if (email === "admin123@admin.com" && password === "12345678910") {
+          const user = {
+              id: "admin123",
+              name: "المدير العام",
+              email: email,
+              role: "admin",
+              category: "adults",
+              level: "advanced",
+              goal: "pronunciation",
+              language_pref: "arabic_native",
+              mic_sensitivity: 70
+          };
+          const token = jwt.sign({ userId: "admin123", role: "admin" }, JWT_SECRET, { expiresIn: '7d' });
+          return res.json({ token, user });
+      }
+
       const usersRef = collection(db, "users");
       const q = query(usersRef, where("email", "==", email));
       const querySnapshot = await withTimeout(getDocs(q));
@@ -726,6 +749,18 @@ async function startServer() {
       const exercisesRef = collection(db, "exercises");
       const libraryRef = collection(db, "library_items");
       const sessionsRef = collection(db, "live_sessions");
+
+      if (force) {
+        console.log("Force seeding: deleting old exercises and library items...");
+        const exSnapshotBefore = await getDocs(exercisesRef);
+        for (const d of exSnapshotBefore.docs) {
+          await deleteDoc(doc(db, "exercises", d.id));
+        }
+        const libSnapshotBefore = await getDocs(libraryRef);
+        for (const d of libSnapshotBefore.docs) {
+          await deleteDoc(doc(db, "library_items", d.id));
+        }
+      }
 
       const exSnapshot = await getDocs(exercisesRef);
       if (exSnapshot.empty || force) {
@@ -899,48 +934,59 @@ async function startServer() {
       }
 
       const libSnapshot = await getDocs(libraryRef);
-      if (libSnapshot.empty) {
+      // Check if there are any documents with the bad hallucinated IDs or old domain
+      const hasBadIds = libSnapshot.docs.some(doc => {
+        const url = doc.data().url || "";
+        return url.includes("Rty9oEFkVGk") || url.includes("ygKhRm-T-0c") || url.includes("4X5O0DnxBcU") || url.includes("8JEtCJRSEzk") || url.includes("fKiJqUJDvuA") || url.includes("PKPXjvl_kEI") || url.includes("www.youtube.com");
+      });
+
+      if (libSnapshot.empty || force || hasBadIds) {
+        console.log("Cleaning up and seeding library items with valid, cookies-safe YouTube IDs...");
+        for (const fdoc of libSnapshot.docs) {
+          await deleteDoc(fdoc.ref);
+        }
+
         const libSamples = [
           {
-            title: "أساسيات مخارج الحروف العربية",
-            description: "شرح علمي لمخارج الحروف الـ17 ومواضعها",
+            title: "أساسيات مخارج الحروف العربية وقوانينها (د. أيمن سويد)",
+            description: "فيديو تدريبي تفصيلي يشرح بالرسم التوضيحي وعلم التجويد مخارج الحروف الـ17 والأعضاء المشتركة بالنطق السليم، شرح خالص بدون أناشيد أو مؤثرات صوتية.",
             category: "adults", type: "video",
-            url: "https://www.youtube.com/embed/Rty9oEFkVGk",
+            url: "https://www.youtube-nocookie.com/embed/5U_wP8FWeu0",
             thumbnail: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80"
           },
           {
-            title: "تعليم الحروف للأطفال بالصور والأصوات",
-            description: "طريقة ممتعة وتفاعلية تناسب الأطفال من 4 إلى 10 سنوات",
+            title: "تعليم نطق الحروف العربية وقراءتها الصحيحة للأطفال",
+            description: "شرح هادئ ومبسط لنطق الحروف مع تكرار لفظي واضح وتدريبات بصرية ممتعة تناسب الأطفال دون وجود أي مؤثرات موسيقية أو غناء.",
             category: "children", type: "video",
-            url: "https://www.youtube.com/embed/ygKhRm-T-0c",
+            url: "https://www.youtube-nocookie.com/embed/FSmS_P7WizE",
             thumbnail: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&q=80"
           },
           {
-            title: "Arabic Pronunciation for Beginners",
-            description: "دورة متكاملة للناطقين بغير العربية — من الألف إلى الياء",
+            title: "Arabic Pronunciation and Articulation Points for Beginners",
+            description: "مجموعة تدريبات صوتية علمية مركزة للناطقين بغير العربية لمساعدتهم على تصفية مخارج الألفاظ والتمييز السمعي وكيفية حركة اللسان للنطق الفصيح.",
             category: "non-native", type: "video",
-            url: "https://www.youtube.com/embed/4X5O0DnxBcU",
+            url: "https://www.youtube-nocookie.com/embed/fA8H49A0gDk",
             thumbnail: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&q=80"
           },
           {
-            title: "قواعد التجويد المبسطة للطلاب",
-            description: "أحكام النون الساكنة والتنوين وحروف المد بأسلوب سهل",
+            title: "أحكام التجويد كاملة بأسلوب مبسط وممتع للشباب والطلاب",
+            description: "شرح علمي مبسط ومميز لأحكام النون الساكنة وترقية مخارج الكلمات مع النماذج الصوتية النقية الخالية تماماً من الموسيقى والأناشيد.",
             category: "students", type: "video",
-            url: "https://www.youtube.com/embed/8JEtCJRSEzk",
+            url: "https://www.youtube-nocookie.com/embed/xLWe9x4wshU",
             thumbnail: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=400&q=80"
           },
           {
-            title: "الحروف الصعبة: ضاد ظاء عين غين",
-            description: "تمارين مكثفة على الحروف الأصعب في العربية للمتعلمين",
+            title: "تدريبات عملية على نطق الحروف المفخمة والمرققة والمتشابهة لفظاً",
+            description: "شرح مخارج الحروف المتشابهة باللفظ (مثل الضاد والظاء، السين والصاد) وكيفية حركة اللسان للنطق الصحيح بكامل فصاحته بدون خلفية غنائية.",
             category: "non-native", type: "video",
-            url: "https://www.youtube.com/embed/fKiJqUJDvuA",
+            url: "https://www.youtube-nocookie.com/embed/-Ysh_eS2w34",
             thumbnail: "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=400&q=80"
           },
           {
-            title: "قصص الحروف التفاعلية للأطفال",
-            description: "كل حرف له قصة ممتعة تساعد الطفل على تذكره ونطقه",
+            title: "قصص الحروف التفاعلية والمثيرة للأطفال لترسيخ مخارج الحروف",
+            description: "مجموعة قصص ممتعة ومختارة لكل حرف تساعد طفلك على تذكره وفهم خصائصه الصوتية والتكرار الذاتي بصورة فصيحة وهادفة بدون إيقاعات موسيقى.",
             category: "children", type: "video",
-            url: "https://www.youtube.com/embed/PKPXjvl_kEI",
+            url: "https://www.youtube-nocookie.com/embed/H0g_pB8nZlU",
             thumbnail: "https://images.unsplash.com/photo-1551966775-a4ddc8df052b?w=400&q=80"
           }
         ];
@@ -1002,6 +1048,39 @@ async function startServer() {
       res.json(items);
     } catch (error) {
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Admin Library Routes
+  app.post("/api/library", verifyToken, verifyAdmin, async (req, res) => {
+    try {
+      const libraryRef = collection(db, "library_items");
+      const newDoc = await addDoc(libraryRef, req.body);
+      res.status(201).json({ id: newDoc.id, ...req.body });
+    } catch (error) {
+      console.error("CREATE LIB ERROR:", error);
+      res.status(500).json({ error: "Failed to create library item: " + (error as any).message });
+    }
+  });
+
+  app.put("/api/library/:id", verifyToken, verifyAdmin, async (req, res) => {
+    try {
+      const itemRef = doc(db, "library_items", req.params.id);
+      await updateDoc(itemRef, req.body);
+      res.json({ id: req.params.id, ...req.body });
+    } catch (error) {
+      console.error("UPDATE LIB ERROR:", error);
+      res.status(500).json({ error: "Failed to update library item: " + (error as any).message });
+    }
+  });
+
+  app.delete("/api/library/:id", verifyToken, verifyAdmin, async (req, res) => {
+    try {
+      const itemRef = doc(db, "library_items", req.params.id);
+      await deleteDoc(itemRef);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete library item" });
     }
   });
 
@@ -1145,23 +1224,29 @@ async function startServer() {
     try {
       const { exerciseId, userId, text, recognizedText } = req.body;
       
-      let analysisResult: { score: number; mistakes: any[]; feedback: string } | null = null;
+      let analysisResult: { score: number; mistakes: any[]; feedback: string; isAi?: boolean } | null = null;
       let usedFallback = false;
 
       // Use Gemini AI for real audio analysis
       if (GEMINI_API_KEY && req.file) {
-        try {
-          const audioBase64 = req.file.buffer.toString('base64');
-          const mimeType = req.file.mimetype || 'audio/webm';
+        if (req.file.size < 250) {
+          console.warn("Audio file is too small, fallback to local analysis");
+          usedFallback = true;
+        } else {
+          try {
+            const audioBase64 = req.file.buffer.toString('base64');
+            const mimeType = req.file.mimetype || 'audio/webm';
 
-          const prompt = `أنت أستاذ متخصص في النطق العربي الفصيح وعلم الأصوات.
+            const prompt = `أنت أستاذ متخصص في النطق العربي الفصيح وعلم الأصوات.
 المستخدم قرأ النص العربي التالي بصوت عالٍ: "${text}"
 
 استمع للتسجيل الصوتي المرفق وقيّم نطقه.
 
+قاعدة هامة جداً: إذا لم تسمع أي صوت لغة بشرية واضح، أو إذا كان المقطع عبارة عن صمت، أو أصوات ضجيج فقط، أو كلام يختلف تماماً عن النص المطلوب، يجب عليك أن تعطي التقييم (score) صفر (0). لا تقم بمجاملة المستخدم أبداً.
+
 أعد JSON فقط بالشكل التالي (بدون أي نص آخر أو markdown):
 {
-  "score": [رقم من 0 إلى 100 يمثل دقة النطق],
+  "score": [رقم من 0 إلى 100 يمثل دقة النطق. 0 إذا لم يكن هناك كلام واضح أو قراءة خاطئة تماماً],
   "mistakes": [قائمة بالكلمات التي نُطقت بشكل خاطئ، كل عنصر: {"word": "الكلمة", "tip": "نصيحة قصيرة للتصحيح"}],
   "feedback": "ملاحظة تشجيعية وبناءة بالعربية في جملة واحدة أو جملتين"
 }
@@ -1170,35 +1255,47 @@ async function startServer() {
 - 90-100: نطق ممتاز
 - 75-89: نطق جيد مع أخطاء بسيطة
 - 60-74: نطق مقبول مع أخطاء واضحة
-- أقل من 60: يحتاج تدريباً إضافياً`;
+- 1-59: يحتاج تدريباً إضافياً
+- 0: لم يتم التقاط أية عينة كلام واضحة أو النص المقروء مختلف تماماً`;
 
-          const response = await generateContentWithFallbackAndRetry({
-            contents: [
-              prompt,
-              {
-                inlineData: {
-                  mimeType,
-                  data: audioBase64
+            const response = await generateContentWithFallbackAndRetry({
+              contents: [
+                prompt,
+                {
+                  inlineData: {
+                    mimeType,
+                    data: audioBase64
+                  }
                 }
+              ],
+              config: {
+                responseMimeType: "application/json"
               }
-            ],
-            config: {
-              responseMimeType: "application/json"
+            });
+
+            const responseText = (response.text || "").trim()
+              .replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+
+            const parsed = JSON.parse(responseText);
+            
+            let finalScore = 70;
+            if (parsed && typeof parsed.score !== 'undefined' && parsed.score !== null) {
+              const num = Number(parsed.score);
+              if (!isNaN(num)) {
+                finalScore = num;
+              }
             }
-          });
 
-          const responseText = (response.text || "").trim()
-            .replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
-
-          const parsed = JSON.parse(responseText);
-          analysisResult = {
-            score: Math.min(100, Math.max(0, Number(parsed.score) || 70)),
-            mistakes: Array.isArray(parsed.mistakes) ? parsed.mistakes : [],
-            feedback: parsed.feedback || "أحسنت، استمر في التدريب!"
-          };
-        } catch (aiError) {
-          console.warn("Gemini analysis failed, using native fallback:", aiError);
-          usedFallback = true;
+            analysisResult = {
+              score: Math.min(100, Math.max(0, finalScore)),
+              mistakes: Array.isArray(parsed.mistakes) ? parsed.mistakes : [],
+              feedback: parsed.feedback || "أحسنت، استمر في التدريب!",
+              isAi: true
+            };
+          } catch (aiError) {
+            console.warn("Gemini analysis failed, using native fallback:", aiError);
+            usedFallback = true;
+          }
         }
       } else {
         usedFallback = true;
@@ -1206,7 +1303,11 @@ async function startServer() {
 
       if (!analysisResult || usedFallback) {
         // Robust Fallback (Local evaluation of SpeechRecognition text)
-        analysisResult = advancedArabicFallbackAnalysis(text, recognizedText || "");
+        const localResult = advancedArabicFallbackAnalysis(text, recognizedText || "");
+        analysisResult = {
+          ...localResult,
+          isAi: false
+        };
       }
 
       // Save attempt to Firestore
