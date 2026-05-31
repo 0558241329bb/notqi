@@ -1,9 +1,10 @@
 {
-  "apiKey": "AIzaSyALEoYFOkLhOjNabG2fr8BDjHFyhn5EYjU",
-  "authDomain": "notki-464f2.firebaseapp.com",
-  "projectId": "notki-464f2",
-  "storageBucket": "notki-464f2.firebasestorage.app",
-  "messagingSenderId": "547430470071",
-  "appId": "1:547430470071:web:6398f5282e1b2d88b99832",
-  "measurementId": "G-45CF32NHD9"
+  "projectId": "gen-lang-client-0437449046",
+  "appId": "1:216913064660:web:0e5b23563ba0908b308141",
+  "apiKey": "AIzaSyBjfyBOrLMEgffBxvabF28mzgvamw1XPaU",
+  "authDomain": "gen-lang-client-0437449046.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-b36ba2a8-4bf6-4fbb-b8ab-7719d450111e",
+  "storageBucket": "gen-lang-client-0437449046.firebasestorage.app",
+  "messagingSenderId": "216913064660",
+  "measurementId": ""
 }

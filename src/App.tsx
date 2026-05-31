@@ -3,10 +3,12 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import ReactPlayer from 'react-player';
-import React, { useState, useEffect, useRef, useCallback, Component } from 'react';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import React, { useState, useEffect, useRef, useCallback, Component, Suspense } from 'react';
 import confetti from 'canvas-confetti';
+import { createSpeechAdapter } from './lib/speech-recognition';
+
+const VideoPlayerModal = React.lazy(() => import('./components/VideoPlayerModal'));
+const ProgressChart = React.lazy(() => import('./components/ProgressChart'));
 
 const getApiUrl = () => {
   const isCapacitor = typeof window !== 'undefined' && (
@@ -905,59 +907,9 @@ const Progress = () => {
             </motion.div>
         </div>
 
-        {/* Chart */}
-        <div className="bg-white p-4 md:p-10 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/20">
-            <h3 className="text-xl font-bold text-slate-800 mb-10 px-2">مستوى النطق اليومي (آخر ٧ أيام)</h3>
-            <div className="h-[320px] w-full">
-                {stats?.totalAttempts < 1 ? (
-                    <div className="h-full flex items-center justify-center text-slate-400 font-medium">لا توجد بيانات كافية لعرض الرسم البياني</div>
-                ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                            <defs>
-                                <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.15}/>
-                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                                </linearGradient>
-                            </defs>
-                            <XAxis 
-                                dataKey="dayName" 
-                                fontSize={11} 
-                                tickLine={false} 
-                                axisLine={false} 
-                                tick={{ fill: '#94a3b8', fontWeight: 600 }}
-                                dy={10}
-                            />
-                            <YAxis 
-                                domain={[0, 100]} 
-                                fontSize={11} 
-                                tickLine={false} 
-                                axisLine={false}
-                                tick={{ fill: '#94a3b8', fontWeight: 600 }}
-                                dx={-5}
-                            />
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                            <Tooltip 
-                                cursor={{ stroke: '#3b82f6', strokeWidth: 2, strokeDasharray: '5 5' }}
-                                contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', direction: 'rtl' }}
-                                labelStyle={{ fontWeight: 'bold', marginBottom: '4px', color: '#1e293b' }}
-                            />
-                            <Area 
-                                type="monotone" 
-                                dataKey="score" 
-                                stroke="#3b82f6" 
-                                strokeWidth={5} 
-                                fillOpacity={1} 
-                                fill="url(#colorScore)"
-                                animationDuration={2000}
-                                name="أفضل درجة"
-                                activeDot={{ r: 8, strokeWidth: 0, fill: '#3b82f6' }}
-                            />
-                        </AreaChart>
-                    </ResponsiveContainer>
-                )}
-            </div>
-        </div>
+        <Suspense fallback={<div className="bg-white p-4 md:p-10 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/20 animate-pulse"><div className="h-[320px] w-full" /></div>}>
+          <ProgressChart chartData={chartData} totalAttempts={stats?.totalAttempts || 0} />
+        </Suspense>
 
         {/* Recent Attempts */}
         <div className="space-y-6">
@@ -1257,40 +1209,28 @@ const Training = () => {
     try {
       // Professional audio constraints
       const constraints: MediaStreamConstraints = {
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          sampleRate: { ideal: 48000 },
-          sampleSize: { ideal: 16 },
-          channelCount: { ideal: 1 }
-        }
+        audio: true
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
 
-      // Start Speech Recognition Fallback
+      // Start Speech Recognition via adapter (Native Capgo or Web fallback)
       setRecognizedText('');
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        recognitionRef.current = new SpeechRecognition();
-        recognitionRef.current.lang = 'ar-SA';
-        recognitionRef.current.continuous = true;
-        recognitionRef.current.interimResults = true;
-        
-        recognitionRef.current.onresult = (event: any) => {
-          let finalTranscript = '';
-          for (let i = event.resultIndex; i < event.results.length; ++i) {
-            if (event.results[i].isFinal) {
-              finalTranscript += event.results[i][0].transcript;
-            }
-          }
-          if (finalTranscript) {
-             setRecognizedText(prev => prev + ' ' + finalTranscript);
-          }
-        };
-        try { recognitionRef.current.start(); } catch(e){}
+      try {
+        const adapter = await createSpeechAdapter();
+        recognitionRef.current = adapter;
+        adapter.setPartialCallback((text: string) => {
+          setRecognizedText(prev => prev + ' ' + text);
+        });
+        const permitted = await adapter.requestPermission();
+        if (permitted) {
+          await adapter.start('ar-SA');
+        } else {
+          console.warn('Speech recognition permission denied');
+        }
+      } catch (e) {
+        console.warn('Speech recognition unavailable, proceeding without it', e);
       }
 
       // Professional audio processing chain
@@ -1334,7 +1274,6 @@ const Training = () => {
           maxVolumeRef.current = 0;
 
           const monitorVolume = () => {
-            if (!isRecording) return;
             const data = new Uint8Array(volumeAnalyser.frequencyBinCount);
             volumeAnalyser.getByteFrequencyData(data);
             let sum = 0;
@@ -1360,12 +1299,16 @@ const Training = () => {
         ? 'audio/mp4'
         : '';
 
-      const options: MediaRecorderOptions = {
-        audioBitsPerSecond: 256000,
-        mimeType: mimeType || undefined
-      };
-
-      mediaRecorderRef.current = new MediaRecorder(stream, options);
+      let recorder: MediaRecorder;
+      try {
+        recorder = new MediaRecorder(stream, {
+          audioBitsPerSecond: 128000,
+          mimeType: mimeType || undefined
+        });
+      } catch (e) {
+        recorder = new MediaRecorder(stream);
+      }
+      mediaRecorderRef.current = recorder;
       const chunks: Blob[] = [];
 
       mediaRecorderRef.current.ondataavailable = (e) => {
@@ -1398,14 +1341,17 @@ const Training = () => {
           return prev + 1;
         });
       }, 1000);
-    } catch (err) {
-      setMicError('يرجى تفعيل الميكروفون للمتابعة في متصفحك أو استخدام التطبيق مباشرة.');
+    } catch (err: any) {
+      console.error("Recording error:", err);
+      setMicError(`تعذر بدء التسجيل: ${err?.message || 'يرجى تفعيل الميكروفون للمتابعة.'}`);
     }
   };
 
-  const stopRecording = () => {
+  const stopRecording = async () => {
     if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch(e){}
+      try { await recognitionRef.current.stop(); } catch(e){}
+      recognitionRef.current.setPartialCallback(null);
+      recognitionRef.current = null;
     }
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
@@ -1473,13 +1419,17 @@ const Training = () => {
     formData.append('recognizedText', recognizedText.trim());
 
     try {
-      const res = await fetch(API_URL + '/api/analyze', {
+      const res = await fetch(API_URL + '/api/analyze-audio', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
         },
         body: formData
       });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody?.error || `HTTP ${res.status}`);
+      }
       const data = await res.json();
       setAnalysisResult(data);
       updateSession(data.score);
@@ -1492,7 +1442,7 @@ const Training = () => {
         });
       }
     } catch (err) {
-      setError('حدث خطأ أثناء تحليل الصوت');
+      setError('حدث خطأ أثناء تحليل الصوت. يرجى التأكد من اتصالك بالإنترنت.');
       setStep('display');
     }
   };
@@ -2052,72 +2002,6 @@ const getYoutubeId = (url: string) => {
   return (match && match[2].length === 11) ? match[2] : null;
 };
 
-// Library Screen
-// Video Player Component to handle stable playback during transitions
-const VideoPlayerModal = ({ video, item, onClose }: { video: string, item: any, onClose: () => void }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
-        className="bg-slate-900 rounded-3xl overflow-hidden w-full max-w-3xl shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
-          <h4 className="text-white font-black">{item?.title}</h4>
-          <button onClick={onClose} className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white hover:bg-white/20">✕</button>
-        </div>
-        <div className="aspect-video bg-black flex items-center justify-center relative">
-          <div className="w-full h-full relative group">
-            {video.includes('youtube') || video.includes('youtu.be') ? (
-              <iframe
-                width="100%"
-                height="100%"
-                src={`https://www.youtube.com/embed/${(() => {
-                  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-                  const match = video.match(regExp);
-                  return (match && match[2].length >= 11) ? match[2].substring(0, 11) : video.split('embed/')[1]?.split('?')[0] || '';
-                })()}?autoplay=1&rel=0`}
-                title="YouTube video player"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                className="w-full h-full"
-              ></iframe>
-            ) : (
-              <div className="w-full h-full">
-                {(() => {
-                  const Player = ReactPlayer as any;
-                  return (
-                    <Player 
-                      key={video}
-                      url={video} 
-                      width="100%" 
-                      height="100%" 
-                      controls 
-                      playing 
-                      onError={(e: any) => {
-                        console.error("ReactPlayer Error:", e);
-                      }}
-                    />
-                  );
-                })()}
-              </div>
-            )}
-            <div className="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg text-[10px] text-white flex items-center gap-2 pointer-events-none">
-               <ExternalLink size={12} />
-               <span className="hover:underline">المشغل المباشر</span>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
-
 const Library = () => {
   const { user, token } = useAuth();
   const navigate = useNavigate();
@@ -2380,11 +2264,13 @@ const Library = () => {
       {/* Video Modal - keep internal content stable during exit transitions */}
       <AnimatePresence>
         {selectedVideo && (
-          <VideoPlayerModal 
-            video={selectedVideo} 
-            item={selectedItem} 
-            onClose={() => { setSelectedVideo(null); setSelectedItem(null); }} 
-          />
+          <Suspense fallback={<div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center"><div className="w-10 h-10 border-4 border-white/30 border-t-white rounded-full animate-spin" /></div>}>
+            <VideoPlayerModal 
+              video={selectedVideo} 
+              item={selectedItem} 
+              onClose={() => { setSelectedVideo(null); setSelectedItem(null); }} 
+            />
+          </Suspense>
         )}
       </AnimatePresence>
 

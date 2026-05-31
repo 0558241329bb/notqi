@@ -10,56 +10,17 @@ import rateLimit from "express-rate-limit";
 import { body, validationResult } from "express-validator";
 import multer from "multer";
 import { GoogleGenAI } from "@google/genai";
-
-// TODO: Upgrade to Firebase Admin SDK for production security
-// Current: Client SDK with open rules (DEV ONLY)
-import { initializeApp } from "firebase/app";
-import { getFirestore, initializeFirestore, collection, addDoc, getDocs, query, where, serverTimestamp, setDoc, doc, getDoc, orderBy, limit, setLogLevel, deleteDoc, updateDoc } from "firebase/firestore";
-// AI Studio fallback support
-
-import fs from 'fs';
+import { getFirestore as initDb, serverTimestamp } from "./src/lib/firebase-init.js";
 
 const isProd = process.env.NODE_ENV === 'production';
 
-let fileFirebaseConfig: any = {};
-try {
-  const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
-  if (fs.existsSync(configPath)) {
-    fileFirebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-  }
-} catch (e) {
-  // Ignored
+let db: any = null;
+async function ensureDb() {
+  if (!db) db = await initDb();
+  return db;
 }
 
-const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY || fileFirebaseConfig.apiKey || "",
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN || fileFirebaseConfig.authDomain || "",
-  projectId: process.env.FIREBASE_PROJECT_ID || fileFirebaseConfig.projectId || "",
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET || fileFirebaseConfig.storageBucket || "",
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || fileFirebaseConfig.messagingSenderId || "",
-  appId: process.env.FIREBASE_APP_ID || fileFirebaseConfig.appId || "",
-};
-
-// تحقق من المتغيرات الضرورية عند بدء التشغيل
-const requiredEnvVars = ['FIREBASE_API_KEY', 'FIREBASE_PROJECT_ID', 'JWT_SECRET'];
-const missingVars = requiredEnvVars.filter(v => {
-  if (!isProd && v !== 'JWT_SECRET' && v !== 'FIREBASE_PROJECT_ID' && v !== 'FIREBASE_API_KEY') return false; // In dev, we use fallback config
-  if (!isProd && v === 'FIREBASE_API_KEY' && firebaseConfig.apiKey) return false;
-  if (!isProd && v === 'FIREBASE_PROJECT_ID' && firebaseConfig.projectId) return false;
-  return !process.env[v] && !firebaseConfig[v.replace('FIREBASE_', '').replace(/_([a-z])/g, (g: string) => g[1].toUpperCase()) as keyof typeof firebaseConfig];
-});
-
-if (isProd && missingVars.length > 0) {
-  console.error(`Error: Missing required environment variables: ${missingVars.join(', ')}`);
-  process.exit(1);
-}
-
-setLogLevel("error");
-
-const firebaseApp = initializeApp(firebaseConfig);
-const db = initializeFirestore(firebaseApp, { experimentalForceLongPolling: true }, fileFirebaseConfig.firestoreDatabaseId || undefined);
-
-const withTimeout = <T>(promise: Promise<T>, ms: number = 15000): Promise<T> => {
+const withTimeout = async <T = any>(promise: Promise<T> | any, ms: number = 15000): Promise<T | any> => {
   return Promise.race([
     promise,
     new Promise<T>((_, reject) => setTimeout(() => reject(new Error("Request Timeout: Server took too long to respond")), ms))
@@ -375,9 +336,9 @@ async function smartExerciseRecommendation(
   // جلب آخر 10 محاولات للمستخدم
   let recentAttempts: any[] = [];
   try {
-    const attemptsRef = collection(db, "attempts");
-    const q = query(attemptsRef, where("userId", "==", userId), limit(10));
-    const snap = await getDocs(q);
+    const attemptsRef = db.collection("attempts");
+    const q = attemptsRef.where("userId", "==", userId).limit(10);
+    const snap = await q.get();
     recentAttempts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   } catch {}
   
@@ -490,12 +451,43 @@ async function generateContentWithFallbackAndRetry(
   throw lastError || new Error("Gemini API call failed across all fallback models");
 }
 
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB max
+
+async function transcribeAudioWithGemini(audioBuffer: Buffer, mimeType: string): Promise<string> {
+  if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY not configured');
+
+  const geminiMime = mimeType.includes('mp4') ? 'audio/mpeg'
+    : mimeType.includes('mp3') ? 'audio/mpeg'
+    : mimeType.includes('opus') ? 'audio/opus'
+    : mimeType.includes('wav') ? 'audio/wav'
+    : 'audio/opus';
+
+  const response = await generateContentWithFallbackAndRetry({
+    contents: [{
+      role: 'user',
+      parts: [
+        { text: 'أنت خبير في التعرف على الكلام العربي. استمع إلى هذا المقطع الصوتي واكتب نص ما يقال باللغة العربية الفصحى بدقة. أعد النص فقط بدون أي إضافات.' },
+        {
+          inlineData: {
+            mimeType: geminiMime,
+            data: audioBuffer.toString('base64'),
+          }
+        }
+      ]
+    }],
+  }, ['gemini-2.5-flash', 'gemini-3.1-flash-lite-preview', 'gemini-3.1-flash-image-preview']);
+
+  const text = response?.text || '';
+  return text.trim();
+}
 
 async function startServer() {
   const app = express();
   app.set('trust proxy', 1);
   const PORT = 3000;
+
+  // Initialize Firestore
+  await ensureDb();
 
   // Middlewares
   app.use(cors());
@@ -553,12 +545,12 @@ async function startServer() {
       const { name, email, password, category } = req.body;
       
       console.log("Checking if user exists for:", email);
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", email));
+      const usersRef = db.collection("users");
+      const q = usersRef.where("email", "==", email);
       console.log("Querying firestore...");
-      const querySnapshot = await withTimeout(getDocs(q));
+      const querySnapshot = await withTimeout(q.get());
       console.log("Query completed.");
-      
+
       if (!querySnapshot.empty) {
         console.log("User already exists:", email);
         return res.status(400).json({ error: "البريد الإلكتروني موجود بالفعل" });
@@ -567,7 +559,7 @@ async function startServer() {
       console.log("Hashing password...");
       const passwordHash = await bcrypt.hash(password, 10);
       console.log("Password hashed.");
-      
+
       const userData = {
         name,
         email,
@@ -581,7 +573,7 @@ async function startServer() {
       };
 
       console.log("Adding user doc...");
-      const docRef = await withTimeout(addDoc(usersRef, userData));
+      const docRef = await withTimeout(usersRef.add(userData));
       console.log("User doc added with ID:", docRef.id);
       
       const user = {
@@ -631,9 +623,9 @@ async function startServer() {
           return res.json({ token, user });
       }
 
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", email));
-      const querySnapshot = await withTimeout(getDocs(q));
+      const usersRef = db.collection("users");
+      const q = usersRef.where("email", "==", email);
+      const querySnapshot = await withTimeout(q.get());
       
       if (querySnapshot.empty) {
         return res.status(401).json({ error: "البريد الإلكتروني أو كلمة المرور غير صحيحة" });
@@ -680,16 +672,16 @@ async function startServer() {
       const { userId } = (req as any);
       const { name, email, currentPassword, newPassword } = req.body;
       
-      const userRef = doc(db, "users", userId);
-      const userSnap = await getDoc(userRef);
+      const userRef = db.collection("users").doc(userId);
+      const userSnap = await userRef.get();
       
       if (!userSnap.exists()) return res.status(404).json({ error: "User not found" });
       const userData = userSnap.data();
 
       if (email && email !== userData.email) {
-        const usersRef = collection(db, "users");
-        const q = query(usersRef, where("email", "==", email));
-        const emailSnap = await getDocs(q);
+        const usersRef = db.collection("users");
+        const q = usersRef.where("email", "==", email);
+        const emailSnap = await q.get();
         if (!emailSnap.empty) return res.status(400).json({ error: "البريد الإلكتروني موجود بالفعل" });
       }
 
@@ -701,9 +693,9 @@ async function startServer() {
         updatedData.passwordHash = await bcrypt.hash(newPassword, 10);
       }
 
-      await setDoc(userRef, { ...userData, ...updatedData });
+      await userRef.set( { ...userData, ...updatedData });
       
-      const updatedUserSnap = await getDoc(userRef);
+      const updatedUserSnap = await userRef.get();
       const updatedUser = { id: updatedUserSnap.id, ...updatedUserSnap.data() };
       delete (updatedUser as any).passwordHash;
 
@@ -727,14 +719,14 @@ async function startServer() {
       const { userId } = (req as any);
       const { level, goal, language_pref, mic_sensitivity, category } = req.body;
       
-      const userRef = doc(db, "users", userId);
-      const userSnap = await getDoc(userRef);
+      const userRef = db.collection("users").doc(userId);
+      const userSnap = await userRef.get();
       if (!userSnap.exists()) return res.status(404).json({ error: "User not found" });
 
       const updatedData = { level, goal, language_pref, mic_sensitivity, category };
-      await setDoc(userRef, { ...userSnap.data(), ...updatedData });
+      await userRef.set( { ...userSnap.data(), ...updatedData });
       
-      const updatedUserSnap = await getDoc(userRef);
+      const updatedUserSnap = await userRef.get();
       const updatedUser = { id: updatedUserSnap.id, ...updatedUserSnap.data() };
       delete (updatedUser as any).passwordHash;
 
@@ -748,23 +740,23 @@ async function startServer() {
   // Seed Exercises if collection is empty
   const seedExercises = async (force = false) => {
     try {
-      const exercisesRef = collection(db, "exercises");
-      const libraryRef = collection(db, "library_items");
-      const sessionsRef = collection(db, "live_sessions");
+      const exercisesRef = db.collection("exercises");
+      const libraryRef = db.collection("library_items");
+      const sessionsRef = db.collection("live_sessions");
 
       if (force) {
         console.log("Force seeding: deleting old exercises and library items...");
-        const exSnapshotBefore = await getDocs(exercisesRef);
+        const exSnapshotBefore = await exercisesRef.get();
         for (const d of exSnapshotBefore.docs) {
-          await deleteDoc(doc(db, "exercises", d.id));
+          await db.collection("exercises").doc(d.id).delete();
         }
-        const libSnapshotBefore = await getDocs(libraryRef);
+        const libSnapshotBefore = await libraryRef.get();;
         for (const d of libSnapshotBefore.docs) {
-          await deleteDoc(doc(db, "library_items", d.id));
+          await db.collection("library_items").doc(d.id).delete();
         }
       }
 
-      const exSnapshot = await getDocs(exercisesRef);
+      const exSnapshot = await exercisesRef.get();
       if (exSnapshot.empty || force) {
         const samples = [
           // ========= فئة الأطفال — مستوى مبتدئ =========
@@ -931,11 +923,11 @@ async function startServer() {
           }
         ];
         for (const s of samples) {
-          await addDoc(exercisesRef, { ...s, createdAt: serverTimestamp() });
+          await exercisesRef.add({ ...s, createdAt: serverTimestamp() });
         }
       }
 
-      const libSnapshot = await getDocs(libraryRef);
+      const libSnapshot = await libraryRef.get();;
       // Check if there are any documents with the bad hallucinated IDs or old domain
       const hasBadIds = libSnapshot.docs.some(doc => {
         const url = doc.data().url || "";
@@ -945,7 +937,7 @@ async function startServer() {
       if (libSnapshot.empty || force || hasBadIds) {
         console.log("Cleaning up and seeding library items with valid, cookies-safe YouTube IDs...");
         for (const fdoc of libSnapshot.docs) {
-          await deleteDoc(fdoc.ref);
+          await fdoc.ref.delete();
         }
 
         const libSamples = [
@@ -993,11 +985,11 @@ async function startServer() {
           }
         ];
         for (const s of libSamples) {
-          await addDoc(libraryRef, { ...s, createdAt: serverTimestamp() });
+          await libraryRef.add({ ...s, createdAt: serverTimestamp() });
         }
       }
 
-      const sessionsSnapshot = await getDocs(sessionsRef);
+      const sessionsSnapshot = await sessionsRef.get();;
       if (sessionsSnapshot.empty) {
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
@@ -1026,7 +1018,7 @@ async function startServer() {
           }
         ];
         for (const s of sessionsSamples) {
-          await addDoc(sessionsRef, { ...s, createdAt: serverTimestamp() });
+          await sessionsRef.add({ ...s, createdAt: serverTimestamp() });
         }
       }
 
@@ -1040,12 +1032,12 @@ async function startServer() {
   app.get("/api/library", verifyToken, async (req, res) => {
     try {
       const { category } = req.query;
-      const libraryRef = collection(db, "library_items");
-      let q = query(libraryRef);
+      const libraryRef = db.collection("library_items");
+      let q = libraryRef;
       if (category && category !== 'all') {
-        q = query(libraryRef, where("category", "==", category));
+        q = libraryRef.where("category", "==", category);
       }
-      const snapshot = await getDocs(q);
+      const snapshot = await q.get();
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       res.json(items);
     } catch (error) {
@@ -1057,9 +1049,9 @@ async function startServer() {
   app.post("/api/library", verifyToken, verifyAdmin, async (req, res) => {
     console.log("POST /api/library received", req.body);
     try {
-      const libraryRef = collection(db, "library_items");
+      const libraryRef = db.collection("library_items");
       const safeBody = JSON.parse(JSON.stringify(req.body));
-      const newDoc = await withTimeout(addDoc(libraryRef, { ...safeBody, createdAt: serverTimestamp() }));
+      const newDoc = await withTimeout(libraryRef.add({ ...safeBody, createdAt: serverTimestamp() }));
       console.log("Created doc:", newDoc.id);
       res.status(201).json({ id: newDoc.id, ...safeBody });
     } catch (error) {
@@ -1071,9 +1063,9 @@ async function startServer() {
   app.put("/api/library/:id", verifyToken, verifyAdmin, async (req, res) => {
     console.log("PUT /api/library/:id received", req.params.id, req.body);
     try {
-      const itemRef = doc(db, "library_items", req.params.id);
+      const itemRef = db.collection("library_items").doc(req.params.id);
       const safeBody = JSON.parse(JSON.stringify(req.body));
-      await withTimeout(updateDoc(itemRef, safeBody));
+      await withTimeout(itemRef.update(safeBody));
       console.log("Updated doc:", req.params.id);
       res.json({ id: req.params.id, ...safeBody });
     } catch (error) {
@@ -1084,8 +1076,8 @@ async function startServer() {
 
   app.delete("/api/library/:id", verifyToken, verifyAdmin, async (req, res) => {
     try {
-      const itemRef = doc(db, "library_items", req.params.id);
-      await deleteDoc(itemRef);
+      const itemRef = db.collection("library_items").doc(req.params.id);
+      await itemRef.delete();
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete library item" });
@@ -1094,9 +1086,9 @@ async function startServer() {
 
   app.get("/api/sessions", verifyToken, async (req, res) => {
     try {
-      const sessionsRef = collection(db, "live_sessions");
-      const q = query(sessionsRef, where("datetime", ">", new Date().toISOString()), orderBy("datetime", "asc"));
-      const snapshot = await getDocs(q);
+      const sessionsRef = db.collection("live_sessions");
+      const q = sessionsRef.where("datetime", ">", new Date().toISOString()).orderBy("datetime", "asc");
+      const snapshot = await q.get();
       const sessions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       res.json(sessions);
     } catch (error) {
@@ -1110,8 +1102,8 @@ async function startServer() {
       const { sessionId, userId } = req.body;
       if (!sessionId || !userId) return res.status(400).json({ error: "Missing data" });
 
-      const sessionDocRef = doc(db, "live_sessions", sessionId);
-      const sessionSnap = await getDoc(sessionDocRef);
+      const sessionDocRef = db.collection("live_sessions").doc(sessionId);
+      const sessionSnap = await sessionDocRef.get();
 
       if (!sessionSnap.exists()) return res.status(404).json({ error: "Session not found" });
       const sessionData = sessionSnap.data();
@@ -1119,21 +1111,21 @@ async function startServer() {
       if (sessionData.remaining <= 0) return res.status(400).json({ error: "Session is full" });
 
       // Check duplicate booking
-      const bookingsRef = collection(db, "session_bookings");
-      const q = query(bookingsRef, where("userId", "==", userId), where("sessionId", "==", sessionId));
-      const bookingSnap = await getDocs(q);
+      const bookingsRef = db.collection("session_bookings");
+      const q = bookingsRef.where("userId", "==", userId).where("sessionId", "==", sessionId);
+      const bookingSnap = await q.get();
 
       if (!bookingSnap.empty) return res.status(400).json({ error: "تم حجز موعد مسبق في هذه الجلسة" });
 
       // Create booking
-      await addDoc(bookingsRef, {
+      await bookingsRef.add({
         userId,
         sessionId,
         bookedAt: serverTimestamp()
       });
 
       // Update remaining spots
-      await setDoc(sessionDocRef, {
+      await sessionDocRef.set( {
         ...sessionData,
         remaining: sessionData.remaining - 1
       });
@@ -1152,22 +1144,20 @@ async function startServer() {
         return res.status(403).json({ error: "Forbidden" });
       }
 
-      const attemptsRef = collection(db, "attempts");
+      const attemptsRef = db.collection("attempts");
       let attempts: any[] = [];
       try {
-        const q = query(
-          attemptsRef, 
-          where("userId", "==", userId),
-          orderBy("attemptDate", "desc"),
-          limit(30)
-        );
-        const snapshot = await getDocs(q);
+        const q = attemptsRef
+          .where("userId", "==", userId)
+          .orderBy("attemptDate", "desc")
+          .limit(30);
+        const snapshot = await q.get();
         attempts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       } catch (indexErr) {
         // Fallback: fetch without orderBy if index doesn't exist yet
         console.warn("Index missing, falling back to unordered query:", indexErr);
-        const fallbackQ = query(attemptsRef, where("userId", "==", userId), limit(30));
-        const fallbackSnap = await getDocs(fallbackQ);
+        const fallbackQ = attemptsRef.where("userId", "==", userId).limit(30);
+        const fallbackSnap = await fallbackQ.get();
         attempts = fallbackSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         // Sort manually
         attempts.sort((a, b) => {
@@ -1228,28 +1218,20 @@ async function startServer() {
     res.json({ ...result, mode: 'demo', attemptDate: new Date().toISOString() });
   });
 
-  app.post("/api/analyze", verifyToken, analyzeLimiter, upload.single('audio'), async (req: express.Request, res: express.Response) => {
+  app.post("/api/analyze", verifyToken, analyzeLimiter, async (req: express.Request, res: express.Response) => {
     try {
       const { exerciseId, userId, text, recognizedText } = req.body;
       
-      let analysisResult: { score: number; mistakes: any[]; feedback: string; isAi?: boolean } | null = null;
-      let usedFallback = false;
-
-      // Use native fallback analysis instead of Gemini AI
-      usedFallback = true;
-
-      if (!analysisResult || usedFallback) {
-        // Robust Fallback (Local evaluation of SpeechRecognition text)
-        const localResult = advancedArabicFallbackAnalysis(text, recognizedText || "");
-        analysisResult = {
-          ...localResult,
-          isAi: false
-        };
-      }
+      // Robust Fallback (Local evaluation of SpeechRecognition text)
+      const localResult = advancedArabicFallbackAnalysis(text, recognizedText || "");
+      const analysisResult = {
+        ...localResult,
+        isAi: false
+      };
 
       // Save attempt to Firestore
-      const attemptsRef = collection(db, "attempts");
-      await addDoc(attemptsRef, {
+      const attemptsRef = db.collection("attempts");
+      await attemptsRef.add({
         userId,
         exerciseId,
         score: analysisResult.score,
@@ -1264,32 +1246,76 @@ async function startServer() {
     }
   });
 
+  app.post("/api/analyze-audio", verifyToken, analyzeLimiter, upload.single('audio'), async (req: express.Request, res: express.Response) => {
+    try {
+      const { exerciseId, userId, text, recognizedText: clientRecognizedText } = req.body;
+      if (!exerciseId || !text) {
+        return res.status(400).json({ error: "exerciseId and text are required" });
+      }
+      const audioFile = req.file;
+
+      let recognizedText = clientRecognizedText || '';
+      let transcribeSource = 'client';
+
+      if (audioFile && audioFile.buffer && audioFile.buffer.length > 0) {
+        try {
+          const transcribed = await transcribeAudioWithGemini(audioFile.buffer, audioFile.mimetype);
+          if (transcribed) {
+            recognizedText = transcribed;
+            transcribeSource = 'gemini';
+          }
+        } catch (transcribeErr: any) {
+          console.warn("Gemini transcription failed, using client text:", transcribeErr?.message);
+        }
+      }
+
+      const localResult = advancedArabicFallbackAnalysis(text, recognizedText || "");
+      const analysisResult = {
+        ...localResult,
+        isAi: transcribeSource === 'gemini',
+        transcribeSource,
+      };
+
+      const attemptsRef = db.collection("attempts");
+      await attemptsRef.add({
+        userId,
+        exerciseId,
+        score: analysisResult.score,
+        mistakesJson: JSON.stringify(analysisResult.mistakes),
+        attemptDate: serverTimestamp()
+      });
+
+      res.json({ ...analysisResult, attemptDate: new Date().toISOString() });
+    } catch (error) {
+      console.error("Audio analysis failed:", error);
+      res.status(500).json({ error: "فشل تحليل الصوت، يرجى المحاولة مرة أخرى" });
+    }
+  });
+
   // API routes
   app.get("/api/exercises/suggest", verifyToken, async (req: express.Request, res: express.Response) => {
     try {
       const { category, level, id } = req.query as any;
-      const exercisesRef = collection(db, "exercises");
+      const exercisesRef = db.collection("exercises");
       
       if (id) {
-        const docRef = doc(db, "exercises", id);
-        const docSnap = await getDoc(docRef);
+        const docRef = db.collection("exercises").doc(id);
+        const docSnap = await docRef.get();
         if (!docSnap.exists()) return res.status(404).json({ error: "Exercise not found" });
         return res.json({ id: docSnap.id, ...docSnap.data() });
       }
 
       // Fetch exercises matching category + level
-      const q = query(
-        exercisesRef,
-        where("category", "==", category || "adults"),
-        where("level", "==", level || "beginner"),
-        limit(10)
-      );
-      const snapshot = await getDocs(q);
+      const q = exercisesRef
+        .where("category", "==", category || "adults")
+        .where("level", "==", level || "beginner")
+        .limit(10);
+      const snapshot = await q.get();
       
       let exercisePool = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       
       if (exercisePool.length === 0) {
-        const fallback = await getDocs(query(exercisesRef, limit(5)));
+        const fallback = await exercisesRef.limit(5).get();
         if (fallback.empty) return res.status(404).json({ error: "No exercises found" });
         exercisePool = fallback.docs.map(d => ({ id: d.id, ...d.data() }));
       }
@@ -1335,9 +1361,9 @@ ${exerciseList}
       const { userId } = req.params;
       if ((req as any).userId !== userId) return res.status(403).json({ error: "Forbidden" });
       
-      const attemptsRef = collection(db, "attempts");
-      const q = query(attemptsRef, where("userId", "==", userId), limit(50));
-      const snap = await getDocs(q);
+      const attemptsRef = db.collection("attempts");
+      const q = attemptsRef.where("userId", "==", userId).limit(50);
+      const snap = await q.get();
       const attempts = snap.docs.map(d => ({ id: d.id, ...d.data() as any }));
       
       if (attempts.length === 0) return res.json({ insights: [], streakDays: 0, trend: 'neutral' });
@@ -1398,7 +1424,7 @@ ${exerciseList}
     let firebaseStatus = 'unknown';
     try {
       // اختبار سريع للاتصال بـFirebase
-      await withTimeout(getDocs(query(collection(db, "exercises"), limit(1))), 3000);
+      await withTimeout(db.collection("exercises").limit(1).get(), 3000);
       firebaseStatus = 'connected';
     } catch {
       firebaseStatus = 'error';

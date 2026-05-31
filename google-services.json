@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "216913064660",
+    "project_id": "gen-lang-client-0437449046",
+    "storage_bucket": "gen-lang-client-0437449046.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:216913064660:android:66cc5d38c24290c3308141",
+        "android_client_info": {
+          "package_name": "com.notqi.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "216913064660-v1ak05ba4f9vlt651ql79o38fsie9bps.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBWFGTLcWkTl-3OeK8M-fCBjHukcHrW8Ug"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "216913064660-v1ak05ba4f9vlt651ql79o38fsie9bps.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
