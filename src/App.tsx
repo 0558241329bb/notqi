@@ -1070,6 +1070,7 @@ const Training = () => {
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState<'display' | 'recording' | 'analyzing' | 'results'>('display');
   const [error, setError] = useState('');
+  const [micError, setMicError] = useState('');
   
   // Recording states
   const [isRecording, setIsRecording] = useState(false);
@@ -1398,7 +1399,7 @@ const Training = () => {
         });
       }, 1000);
     } catch (err) {
-      alert('يرجى تفعيل الميكروفون للمتابعة');
+      setMicError('يرجى تفعيل الميكروفون للمتابعة في متصفحك أو استخدام التطبيق مباشرة.');
     }
   };
 
@@ -1581,6 +1582,20 @@ const Training = () => {
           <h2 className="text-2xl font-black text-slate-800">التدريب الصوتي</h2>
           <p className="text-slate-500 text-sm mt-1">سجّل صوتك وتلقَّ تحليلاً فورياً بالذكاء الاصطناعي</p>
         </div>
+
+        {/* Microphone Error Alert */}
+        {micError && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-4 flex items-start gap-3">
+            <AlertTriangle className="text-red-500 shrink-0 mt-0.5" size={20} />
+            <div className="flex-1">
+              <h3 className="font-bold text-red-800 text-sm mb-1">تعذر الوصول للميكروفون</h3>
+              <p className="text-red-600 text-xs">{micError}</p>
+            </div>
+            <button onClick={() => setMicError('')} className="text-red-400 hover:text-red-600">
+              <X size={18} />
+            </button>
+          </div>
+        )}
 
         {/* Session Progress Bar */}
         {sessionProgress.attempts > 0 && (

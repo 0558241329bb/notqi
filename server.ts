@@ -14,8 +14,9 @@ import { GoogleGenAI } from "@google/genai";
 // TODO: Upgrade to Firebase Admin SDK for production security
 // Current: Client SDK with open rules (DEV ONLY)
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, getDocs, query, where, serverTimestamp, setDoc, doc, getDoc, orderBy, limit, setLogLevel, deleteDoc, updateDoc } from "firebase/firestore";
+import { getFirestore, initializeFirestore, collection, addDoc, getDocs, query, where, serverTimestamp, setDoc, doc, getDoc, orderBy, limit, setLogLevel, deleteDoc, updateDoc } from "firebase/firestore";
 // AI Studio fallback support
+
 import fs from 'fs';
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -56,7 +57,7 @@ if (isProd && missingVars.length > 0) {
 setLogLevel("error");
 
 const firebaseApp = initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp, fileFirebaseConfig.firestoreDatabaseId || undefined);
+const db = initializeFirestore(firebaseApp, { experimentalForceLongPolling: true }, fileFirebaseConfig.firestoreDatabaseId || undefined);
 
 const withTimeout = <T>(promise: Promise<T>, ms: number = 15000): Promise<T> => {
   return Promise.race([
@@ -1057,9 +1058,10 @@ async function startServer() {
     console.log("POST /api/library received", req.body);
     try {
       const libraryRef = collection(db, "library_items");
-      const newDoc = await withTimeout(addDoc(libraryRef, { ...req.body, createdAt: serverTimestamp() }));
+      const safeBody = JSON.parse(JSON.stringify(req.body));
+      const newDoc = await withTimeout(addDoc(libraryRef, { ...safeBody, createdAt: serverTimestamp() }));
       console.log("Created doc:", newDoc.id);
-      res.status(201).json({ id: newDoc.id, ...req.body });
+      res.status(201).json({ id: newDoc.id, ...safeBody });
     } catch (error) {
       console.error("CREATE LIB ERROR:", error);
       res.status(500).json({ error: "Failed to create library item: " + (error as any).message });
@@ -1070,9 +1072,10 @@ async function startServer() {
     console.log("PUT /api/library/:id received", req.params.id, req.body);
     try {
       const itemRef = doc(db, "library_items", req.params.id);
-      await withTimeout(updateDoc(itemRef, req.body));
+      const safeBody = JSON.parse(JSON.stringify(req.body));
+      await withTimeout(updateDoc(itemRef, safeBody));
       console.log("Updated doc:", req.params.id);
-      res.json({ id: req.params.id, ...req.body });
+      res.json({ id: req.params.id, ...safeBody });
     } catch (error) {
       console.error("UPDATE LIB ERROR:", error);
       res.status(500).json({ error: "Failed to update library item: " + (error as any).message });
