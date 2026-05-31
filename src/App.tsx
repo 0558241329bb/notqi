@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import ReactPlayer from 'react-player';
 import React, { useState, useEffect, useRef, useCallback, Component } from 'react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import confetti from 'canvas-confetti';
@@ -36,7 +37,14 @@ const formatArabicDate = (dateString: string) => {
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   
-  if (loading) return <div>جاري التحميل...</div>;
+  if (loading) return (
+    <div className="natqi-gradient min-h-screen flex items-center justify-center">
+      <div className="text-center space-y-4">
+        <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
+        <p className="text-white/80 font-bold">جارٍ التحميل...</p>
+      </div>
+    </div>
+  );
   if (!user) return <Navigate to="/login" replace />;
   
   return <>{children}</>;
@@ -54,7 +62,9 @@ class GlobalErrorBoundary extends Component<any, any> {
       return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
           <div className="bg-white p-8 rounded-3xl shadow-xl text-center max-w-sm w-full">
-            <span className="text-5xl border-red-500 block mb-4">⚠️</span>
+            <div className="text-red-500 flex justify-center mb-4">
+              <AlertTriangle size={48} />
+            </div>
             <h2 className="text-2xl font-bold text-slate-800 mb-2">حدث خطأ غير متوقع. يرجى المحاولة مجدداً.</h2>
             <button onClick={() => window.location.reload()} className="mt-6 px-6 py-3 bg-primary text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-all">إعادة تحميل الصفحة</button>
           </div>
@@ -96,9 +106,11 @@ const Splash = () => {
            initial={{ y: 20, opacity: 0 }}
            animate={{ y: 0, opacity: 1 }}
            transition={{ delay: 0.2 }}
+           className="flex flex-col items-center justify-center mb-6"
         >
-          <h1 className="text-7xl font-black text-blue-600 mb-6 tracking-tighter">نطقي</h1>
-          <p className="text-xl text-slate-600 mb-8 font-medium">طوّر نطقك مع الذكاء الاصطناعي</p>
+          <img src="/logo.PNG" alt="نطقي" className="h-28 w-auto object-contain mb-4 rounded-2xl" referrerPolicy="no-referrer" />
+          <h1 className="text-4xl font-black text-slate-800 tracking-tighter">نطقي</h1>
+          <p className="text-lg text-slate-500 mt-2 font-medium">طوّر نطقك مع الذكاء الاصطناعي</p>
         </motion.div>
 
         <motion.div 
@@ -157,52 +169,72 @@ const Login = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-slate-50 p-4">
-      <motion.div 
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        className="bg-white p-8 rounded-3xl shadow-lg border border-slate-100 w-full max-w-md"
+    <div className="natqi-gradient min-h-screen flex items-center justify-center p-4 relative overflow-hidden" dir="rtl">
+      <div className="absolute top-[-100px] right-[-100px] w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-[-80px] left-[-80px] w-72 h-72 bg-white/8 rounded-full blur-3xl pointer-events-none" />
+
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="glass-card-light p-8 rounded-3xl shadow-2xl w-full max-w-md z-10"
       >
-        <h2 className="text-3xl font-bold text-slate-800 mb-6">تسجيل الدخول</h2>
-        
+        {/* Header */}
+        <div className="text-center mb-8 flex flex-col items-center justify-center">
+          <img src="/logo.PNG" alt="نطقي" className="h-20 w-auto object-contain mb-3 rounded-2xl mx-auto" referrerPolicy="no-referrer" />
+          <h2 className="text-2xl font-black text-slate-800">مرحباً بك في نطقي</h2>
+          <p className="text-slate-500 text-sm mt-1">سجّل دخولك لمتابعة تعلّمك</p>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">البريد الإلكتروني</label>
-            <input 
-              type="email" 
+            <label className="block text-sm font-bold text-slate-700 mb-2">البريد الإلكتروني</label>
+            <input
+              type="email"
               required
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+              placeholder="example@email.com"
+              className="w-full px-4 py-3 rounded-xl border-2 border-violet-100 focus:border-violet-400 focus:ring-2 focus:ring-violet-200 outline-none transition-all bg-white text-slate-800 placeholder:text-slate-400"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">كلمة المرور</label>
-            <input 
-              type="password" 
+            <label className="block text-sm font-bold text-slate-700 mb-2">كلمة المرور</label>
+            <input
+              type="password"
               required
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+              placeholder="••••••••"
+              className="w-full px-4 py-3 rounded-xl border-2 border-violet-100 focus:border-violet-400 focus:ring-2 focus:ring-violet-200 outline-none transition-all bg-white text-slate-800"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
 
-          {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-600 text-sm font-medium flex items-center gap-2">
+              <AlertTriangle className="text-red-500 shrink-0" size={16} /> {error}
+            </div>
+          )}
 
-          <button 
+          <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center justify-center"
+            className="w-full py-4 natqi-gradient text-white rounded-xl font-black text-lg shadow-lg shadow-violet-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {loading ? (
-              <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : "تسجيل الدخول"}
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <>تسجيل الدخول <span>←</span></>
+            )}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-slate-600">
-          ليس لديك حساب؟ <a href="/register" className="text-blue-600 font-bold hover:underline">إنشاء حساب</a>
-        </p>
+        <div className="mt-6 text-center">
+          <p className="text-slate-500 text-sm">
+            ليس لديك حساب؟{' '}
+            <a href="/register" className="text-violet-600 font-black hover:underline">أنشئ حساباً الآن</a>
+          </p>
+        </div>
       </motion.div>
     </div>
   );
@@ -223,10 +255,10 @@ const Register = () => {
   const navigate = useNavigate();
 
   const categories = [
-    { id: 'children', label: 'أطفال', icon: '👶' },
-    { id: 'students', label: 'طلبة', icon: '🎓' },
-    { id: 'adults', label: 'بالغين', icon: '🧑' },
-    { id: 'non-native', label: 'غير ناطقين', icon: '🌍' },
+    { id: 'children', label: 'أطفال', icon: <Baby size={32} className="text-emerald-500" /> },
+    { id: 'students', label: 'طلبة', icon: <GraduationCap size={32} className="text-indigo-500" /> },
+    { id: 'adults', label: 'بالغين', icon: <User size={32} className="text-amber-500" /> },
+    { id: 'non-native', label: 'غير ناطقين', icon: <Globe size={32} className="text-rose-500" /> },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -268,32 +300,41 @@ const Register = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-slate-50 p-4">
-      <motion.div 
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        className="bg-white p-8 rounded-3xl shadow-lg border border-slate-100 w-full max-w-lg"
+    <div className="natqi-gradient min-h-screen flex items-center justify-center p-4 relative overflow-hidden" dir="rtl">
+      <div className="absolute top-[-100px] left-[-100px] w-80 h-80 bg-white/8 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-[-80px] left-[-80px] w-72 h-72 bg-white/8 rounded-full blur-3xl pointer-events-none" />
+
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="glass-card-light p-8 rounded-3xl shadow-2xl w-full max-w-lg z-10 my-8"
       >
-        <h2 className="text-3xl font-bold text-slate-800 mb-6">إنشاء حساب جديد</h2>
-        
+        <div className="text-center mb-6">
+          <img src="/logo.PNG" alt="نطقي" className="h-20 w-auto object-contain mb-3 rounded-2xl mx-auto" referrerPolicy="no-referrer" />
+          <h2 className="text-2xl font-black text-slate-800">إنشاء حساب جديد</h2>
+          <p className="text-slate-500 text-sm mt-1">تعلّم النطق الصحيح مع الذكاء الاصطناعي</p>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">الاسم الكامل</label>
-              <input 
-                type="text" 
+              <label className="block text-sm font-bold text-slate-700 mb-2">الاسم الكامل</label>
+              <input
+                type="text"
                 required
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                placeholder="أحمد محمد"
+                className="w-full px-4 py-3 rounded-xl border-2 border-violet-100 focus:border-violet-400 focus:ring-2 focus:ring-violet-200 outline-none transition-all bg-white"
                 value={formData.name}
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">البريد الإلكتروني</label>
-              <input 
-                type="email" 
+              <label className="block text-sm font-bold text-slate-700 mb-2">البريد الإلكتروني</label>
+              <input
+                type="email"
                 required
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                placeholder="example@email.com"
+                className="w-full px-4 py-3 rounded-xl border-2 border-violet-100 focus:border-violet-400 focus:ring-2 focus:ring-violet-200 outline-none transition-all bg-white"
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
               />
@@ -302,21 +343,23 @@ const Register = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">كلمة المرور</label>
-              <input 
-                type="password" 
+              <label className="block text-sm font-bold text-slate-700 mb-2">كلمة المرور</label>
+              <input
+                type="password"
                 required
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                placeholder="••••••••"
+                className="w-full px-4 py-3 rounded-xl border-2 border-violet-100 focus:border-violet-400 focus:ring-2 focus:ring-violet-200 outline-none transition-all bg-white"
                 value={formData.password}
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">تأكيد كلمة المرور</label>
-              <input 
-                type="password" 
+              <label className="block text-sm font-bold text-slate-700 mb-2">تأكيد كلمة المرور</label>
+              <input
+                type="password"
                 required
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                placeholder="••••••••"
+                className="w-full px-4 py-3 rounded-xl border-2 border-violet-100 focus:border-violet-400 focus:ring-2 focus:ring-violet-200 outline-none transition-all bg-white"
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
               />
@@ -324,7 +367,7 @@ const Register = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-3">اختر الفئة</label>
+            <label className="block text-sm font-bold text-slate-700 mb-3">اختر فئتك</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {categories.map((cat) => (
                 <button
@@ -332,39 +375,46 @@ const Register = () => {
                   type="button"
                   onClick={() => setFormData({...formData, category: cat.id as any})}
                   className={cn(
-                    "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all gap-2",
-                    formData.category === cat.id 
-                      ? "border-blue-600 bg-blue-50" 
-                      : "border-slate-100 bg-slate-50 hover:bg-slate-100"
+                    "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all gap-2 cursor-pointer",
+                    formData.category === cat.id
+                      ? "border-violet-500 bg-violet-50 shadow-md shadow-violet-200"
+                      : "border-slate-200 bg-white hover:border-violet-200 hover:bg-violet-50/50"
                   )}
                 >
-                  <span className="text-2xl">{cat.icon}</span>
-                  <span className="text-sm font-bold text-slate-700">{cat.label}</span>
+                  <div className="p-1">{cat.icon}</div>
+                  <span className={cn("text-sm font-bold", formData.category === cat.id ? "text-violet-700" : "text-slate-600")}>
+                    {cat.label}
+                  </span>
                 </button>
               ))}
             </div>
           </div>
 
-          {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-600 text-sm font-medium flex items-center gap-2">
+              <AlertTriangle className="text-red-500 shrink-0" size={16} /> {error}
+            </div>
+          )}
 
-          <button 
+          <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all disabled:opacity-50"
+            className="w-full py-4 natqi-gradient text-white rounded-xl font-black text-lg shadow-lg shadow-violet-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-60"
           >
-            {loading ? "جاري إنشاء الحساب..." : "إنشاء الحساب"}
+            {loading ? "جاري إنشاء الحساب..." : "إنشاء الحساب →"}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-slate-600">
-          لديك حساب بالفعل؟ <a href="/login" className="text-blue-600 font-bold hover:underline">تسجيل الدخول</a>
+        <p className="mt-6 text-center text-slate-500 text-sm">
+          لديك حساب؟{' '}
+          <a href="/login" className="text-violet-600 font-black hover:underline">سجّل الدخول</a>
         </p>
       </motion.div>
     </div>
   );
 };
 
-import { Bell, Settings, Mic, Book, Video, BarChart3, ChevronLeft, StopCircle, RefreshCw, Volume2, Globe, Lightbulb, Play, Pause, RotateCcw, Search, FileText, Video as VideoIcon, ExternalLink, Calendar, User, Users, X, Lock, LogOut, CheckCircle2, XCircle, Trash2 } from 'lucide-react';
+import { Bell, Settings, Mic, Book, Video, BarChart3, ChevronLeft, StopCircle, RefreshCw, Volume2, Globe, Lightbulb, Play, Pause, RotateCcw, Search, FileText, ExternalLink, Calendar, User, Users, X, Lock, LogOut, CheckCircle2, XCircle, Trash2, Sparkles, Award, Trophy, Flame, TrendingUp, TrendingDown, ArrowRight, MessageSquare, AlertTriangle, Baby, GraduationCap, Target, BookOpen, Inbox, UserCheck, Music, Edit3, Gauge, Pin, Rocket, Smile } from 'lucide-react';
 
 const Navbar = () => {
   const { user } = useAuth();
@@ -381,53 +431,77 @@ const Navbar = () => {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 h-screen fixed right-0 top-0 bg-white border-l border-slate-100 py-8 px-4 z-50 shadow-xl overflow-y-auto">
-        <h1 
-          className="text-3xl font-black text-primary mb-12 text-center cursor-pointer hover:opacity-80 transition-opacity"
+      <aside className="hidden md:flex flex-col w-64 h-screen fixed right-0 top-0 natqi-gradient shadow-2xl py-8 px-4 z-50 overflow-y-auto">
+        {/* Subtle decoration */}
+        <div className="absolute top-0 left-0 w-full h-32 bg-white/5 rounded-b-[4rem] pointer-events-none" />
+
+        <div 
           onClick={() => navigate('/home')}
+          className="flex flex-col items-center gap-2 mb-12 cursor-pointer hover:opacity-80 transition-opacity relative z-10"
         >
-          نطقي
-        </h1>
-        <div className="flex flex-col gap-2 flex-1">
+          <img src="/logo.PNG" alt="نطقي" className="h-14 w-auto object-contain rounded-xl" referrerPolicy="no-referrer" />
+          <h1 className="text-2xl font-black text-white">نطقي</h1>
+        </div>
+
+        <div className="flex flex-col gap-2 flex-1 relative z-10">
           {navItems.map(item => {
             const isActive = location.pathname.startsWith(item.path);
             return (
-              <button 
+              <button
                 key={item.id}
                 onClick={() => navigate(item.path)}
                 className={cn(
                   "flex items-center gap-4 px-4 py-4 rounded-2xl font-bold transition-all text-lg",
-                  isActive ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-slate-500 hover:bg-slate-50"
+                  isActive
+                    ? "bg-white text-violet-700 shadow-lg"
+                    : "text-white/75 hover:bg-white/15 hover:text-white"
                 )}
                 aria-label={item.label}
               >
                 {item.icon}
                 {item.label}
               </button>
-            )
+            );
           })}
+        </div>
+
+        <div className="relative z-10 mt-8 glass-card rounded-2xl p-4 text-center">
+          <p className="text-white/60 text-xs font-bold">نطقي © 2026</p>
+          <p className="text-white/40 text-[10px] mt-1">منصة النطق الذكي</p>
         </div>
       </aside>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-slate-100 z-50 px-2 py-2 pb-safe shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
-        <div className="flex justify-around items-center">
+      <nav className="md:hidden fixed bottom-0 left-0 w-full bg-white z-50 shadow-[0_-4px_30px_rgba(124,58,237,0.12)] border-t border-violet-100">
+        <div className="flex justify-around items-center px-2 py-2 pb-safe">
           {navItems.map(item => {
             const isActive = location.pathname.startsWith(item.path);
             return (
-              <button 
+              <button
                 key={item.id}
                 onClick={() => navigate(item.path)}
                 className={cn(
-                  "flex flex-col items-center p-2 rounded-xl transition-all",
-                  isActive ? "text-primary scale-110" : "text-slate-400 hover:text-slate-600 focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                  "flex flex-col items-center p-2 rounded-2xl transition-all min-w-[60px]",
+                  isActive
+                    ? "text-violet-600 scale-105"
+                    : "text-slate-400 hover:text-slate-600"
                 )}
                 aria-label={item.label}
               >
-                {item.icon}
-                <span className="text-[10px] font-bold mt-1">{item.label}</span>
+                <div className={cn(
+                  "p-2 rounded-xl transition-all",
+                  isActive ? "natqi-gradient text-white shadow-md shadow-violet-300" : ""
+                )}>
+                  {item.icon}
+                </div>
+                <span className={cn(
+                  "text-[10px] font-black mt-1",
+                  isActive ? "text-violet-600" : "text-slate-400"
+                )}>
+                  {item.label}
+                </span>
               </button>
-            )
+            );
           })}
         </div>
       </nav>
@@ -441,6 +515,9 @@ const Home = () => {
   const navigate = useNavigate();
   const [suggestion, setSuggestion] = useState<any>(null);
   const [loadingSuggestion, setLoadingSuggestion] = useState(true);
+
+  const isChildren = user?.category === 'children';
+  const isNonNative = user?.category === 'non-native';
 
   useEffect(() => {
     if (!user?.category) {
@@ -494,127 +571,155 @@ const Home = () => {
     },
     { 
       id: 'library', 
-      title: 'المكتبة', 
-      desc: 'مجموعة واسعة من النصوص والقصص التدريبية', 
-      icon: <Book className="text-emerald-500" size={32} />, 
+      title: 'مكتبة المحتوى', 
+      desc: 'شاهد الفيديوهات التدريبية والمواد التعليمية', 
+      icon: <Video className="text-violet-500" size={32} />, 
       path: '/library',
-      color: 'bg-emerald-50'
-    },
-    { 
-      id: 'sessions', 
-      title: 'حصص مباشرة', 
-      desc: 'تواصل مع معلمين متخصصين لتصحيح نطقك', 
-      icon: <Video className="text-purple-500" size={32} />, 
-      path: '/sessions',
-      color: 'bg-purple-50'
+      color: 'bg-violet-50' 
     },
     { 
       id: 'progress', 
-      title: 'تقدمي', 
-      desc: 'تابع إحصائياتك وشاهد تطور مستواك', 
-      icon: <BarChart3 className="text-orange-500" size={32} />, 
+      title: 'متابعة الأداء', 
+      desc: 'احصاءات وتقارير ذكية لتقدمك في التدريب', 
+      icon: <BarChart3 className="text-emerald-500" size={32} />, 
       path: '/progress',
-      color: 'bg-orange-50'
+      color: 'bg-emerald-50' 
     },
+    { 
+      id: 'settings', 
+      title: 'الإعدادات', 
+      desc: 'تخصيص الحساب ومستوى التدريب المفضل', 
+      icon: <Settings className="text-amber-500" size={32} />, 
+      path: '/settings',
+      color: 'bg-amber-50' 
+    }
   ];
 
-  const isChildren = user?.category === 'children';
-  const isNonNative = user?.category === 'non-native';
-
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-slate-50" dir="rtl">
       <Navbar />
-      
-      <main className="flex-1 max-w-7xl mx-auto w-full p-4 lg:p-8 space-y-8">
-        {/* Header Section */}
-        <section className="space-y-2">
-          <motion.h2 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className={cn(
-              "font-black text-slate-800",
-              isChildren ? "text-4xl md:text-5xl" : "text-3xl md:text-4xl"
-            )}
-          >
-            {getGreeting()}
-            {isChildren && <motion.span 
-              animate={{ rotate: [0, 20, 0] }}
-              transition={{ repeat: Infinity, duration: 2 }}
-              className="inline-block mr-2"
-            >👋</motion.span>}
-          </motion.h2>
-          {isNonNative && (
-            <p className="text-slate-400 italic text-sm">{getEnglishGreeting()}, {user?.name.split(' ')[0]}</p>
-          )}
-        </section>
 
-        {/* Suggestion Section */}
-        <section className="bg-white rounded-3xl p-6 md:p-8 shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden relative group">
-          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex-1 space-y-4 text-center md:text-right">
-              <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-bold">اقتراح اليوم</span>
-              <h3 className="text-2xl md:text-3xl font-bold text-slate-800">
-                {loadingSuggestion ? "جارٍ التحميل..." : suggestion?.title || "ابدأ رحلتك اليوم"}
-              </h3>
-              <div className="text-slate-600 max-w-md mx-auto md:mx-0">
-                {loadingSuggestion ? <div className="h-4 bg-slate-200 animate-pulse rounded w-3/4 mx-auto md:mx-0"></div> : suggestion?.description || "تدرب على نطق الكلمات الشائعة لتحسين مهاراتك بشكل أسرع."}
+      <main className="flex-1 max-w-4xl mx-auto w-full px-4 pt-6 pb-28 md:pb-8 md:pt-8 space-y-6">
+
+        {/* Hero Header */}
+        <section className="natqi-gradient rounded-[2.5rem] p-6 md:p-8 relative overflow-hidden shadow-2xl shadow-violet-400/30">
+          <div className="absolute top-[-40px] left-[-40px] w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute bottom-[-30px] right-[-30px] w-40 h-40 bg-white/8 rounded-full blur-2xl pointer-events-none" />
+          <div className="relative z-10">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <motion.h2
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className={cn(
+                    "font-black text-white",
+                    isChildren ? "text-3xl" : "text-2xl md:text-3xl"
+                  )}
+                >
+                  {getGreeting()}
+                  {isChildren && (
+                    <motion.span
+                      animate={{ rotate: [0, 20, 0] }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                      className="inline-block mr-2"
+                    >
+                      <Smile size={32} className="inline text-amber-300" />
+                    </motion.span>
+                  )}
+                </motion.h2>
+                {isNonNative && (
+                  <p className="text-white/70 italic text-sm">{getEnglishGreeting()}, {user?.name.split(' ')[0]}</p>
+                )}
+                <p className="text-white/75 text-sm font-medium">استمر في التعلم — مستوى: {user?.level || 'مبتدئ'}</p>
               </div>
-              <button 
-                onClick={() => navigate(`/training${suggestion ? `?id=${suggestion.id}` : ''}`)}
-                className="px-8 py-3 bg-primary text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/30 inline-flex items-center gap-2"
-              >
-                ابدأ الآن <ChevronLeft size={20} />
-              </button>
+              <div className="w-12 h-12 glass-card rounded-2xl flex items-center justify-center text-white shadow-inner">
+                <Target size={24} />
+              </div>
             </div>
-            
-            <div className="w-48 h-48 md:w-64 md:h-64 bg-slate-50 rounded-2xl flex items-center justify-center relative overflow-hidden">
-               {isChildren ? (
-                 <motion.div
-                   animate={{ y: [0, -10, 0] }}
-                   transition={{ repeat: Infinity, duration: 3 }}
-                   className="text-8xl"
-                 >
-                   🚀
-                 </motion.div>
-               ) : (
-                 <Mic size={80} className="text-primary opacity-20" />
-               )}
-               {/* Abstract deco */}
-               <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-3xl"></div>
+
+            {/* Today suggestion mini */}
+            <div className="mt-6 glass-card rounded-2xl p-4 flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <span className="text-white/60 text-xs font-bold block mb-1 flex items-center gap-1">
+                  <Sparkles size={12} className="shrink-0 text-amber-300" /> اقتراح اليوم
+                </span>
+                <p className="text-white font-bold text-sm leading-snug">
+                  {loadingSuggestion
+                    ? "جارٍ التحميل..."
+                    : suggestion?.title || "ابدأ رحلتك اليوم"}
+                </p>
+              </div>
+              <button
+                onClick={() => navigate(`/training${suggestion ? `?id=${suggestion.id}` : ''}`)}
+                className="shrink-0 px-4 py-2 bg-white text-violet-700 rounded-xl font-black text-sm hover:scale-105 active:scale-95 transition-all shadow"
+              >
+                ابدأ ←
+              </button>
             </div>
           </div>
         </section>
 
-        {/* Features Grid */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {features.map((feature, idx) => (
+        {/* Quick Stats Row */}
+        <section className="grid grid-cols-3 gap-3">
+          {[
+            { icon: <Trophy size={22} className="text-amber-500 mx-auto" />, label: 'مستواك', value: user?.level === 'advanced' ? 'متقدم' : user?.level === 'intermediate' ? 'متوسط' : 'مبتدئ' },
+            { icon: <Target size={22} className="text-rose-500 mx-auto" />, label: 'هدفك', value: user?.goal === 'fluency' ? 'طلاقة' : user?.goal === 'letters' ? 'الحروف' : 'نطق' },
+            { icon: <Calendar size={22} className="text-blue-500 mx-auto" />, label: 'اليوم', value: new Date().toLocaleDateString('ar', { weekday: 'short' }) },
+          ].map((stat, i) => (
             <motion.div
-              key={feature.id}
-              initial={{ opacity: 0, y: 20 }}
+              key={i}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              onClick={() => navigate(feature.path)}
-              className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group"
+              transition={{ delay: i * 0.08 }}
+              className="bg-white rounded-2xl p-4 text-center border border-violet-50 shadow-sm flex flex-col justify-between items-center h-24"
             >
-              <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform", feature.color, isChildren && "animate-bounce")}>
-                {feature.icon}
-              </div>
-              <h4 className="text-xl font-bold text-slate-800 mb-2">{feature.title}</h4>
-              <p className="text-slate-500 text-sm leading-relaxed">{feature.desc}</p>
+              <div className="mb-0.5">{stat.icon}</div>
+              <p className="text-[10px] text-slate-400 font-bold">{stat.label}</p>
+              <p className="text-slate-800 font-black text-sm mt-0.5">{stat.value}</p>
             </motion.div>
           ))}
         </section>
 
+        {/* Features Grid */}
+        <section>
+          <h3 className="text-slate-700 font-black text-lg mb-4 px-1">الأقسام الرئيسية</h3>
+          <div className="grid grid-cols-2 gap-4">
+            {features.map((feature, idx) => (
+              <motion.div
+                key={feature.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.08 }}
+                onClick={() => navigate(feature.path)}
+                className={cn(
+                  "bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group",
+                  idx === 0 && "col-span-2 md:col-span-1"
+                )}
+              >
+                <div className={cn(
+                  "w-14 h-14 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-sm",
+                  feature.color,
+                  isChildren && "animate-bounce"
+                )}>
+                  {feature.icon}
+                </div>
+                <h4 className="text-base font-black text-slate-800">{feature.title}</h4>
+                <p className="text-slate-500 text-xs leading-relaxed mt-1">{feature.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
         {/* Main CTA */}
-        <section className="py-8">
+        <section>
           <motion.button
-            animate={{ scale: [1, 1.02, 1] }}
-            transition={{ repeat: Infinity, duration: 2 }}
+            animate={{ scale: [1, 1.015, 1] }}
+            transition={{ repeat: Infinity, duration: 2.5 }}
             onClick={() => navigate('/training')}
-            className="w-full py-6 md:py-8 bg-primary rounded-[2.5rem] text-white text-2xl md:text-3xl font-black shadow-2xl shadow-primary/40 flex items-center justify-center gap-4 hover:brightness-110 transition-all focus:ring-4 focus:ring-primary/20 focus:outline-none"
+            className="w-full py-5 natqi-gradient rounded-[2rem] text-white text-xl font-black shadow-2xl shadow-violet-400/40 flex items-center justify-center gap-3 hover:brightness-110 transition-all focus:ring-4 focus:ring-violet-300 focus:outline-none"
             aria-label="ابدأ التمرين الآن"
           >
-            <span>🎙️</span>
+            <Mic size={24} className="shrink-0" />
             <span>ابدأ التمرين الآن</span>
           </motion.button>
         </section>
@@ -685,14 +790,15 @@ const Progress = () => {
     <div className="min-h-screen flex flex-col items-center justify-center gap-4">
       <Navbar />
       <div className="text-center space-y-3 p-8">
-        <span className="text-6xl">🚀</span>
+        <Rocket size={56} className="text-violet-500 mx-auto animate-bounce mb-2" />
         <h2 className="text-2xl font-black text-slate-800">لم تبدأ تدريباتك بعد</h2>
         <p className="text-slate-500">أكمل تمريناتك الأولى لترى إحصائياتك هنا</p>
         <button 
           onClick={() => navigate('/training')} 
-          className="px-6 py-3 bg-primary text-white rounded-2xl font-bold"
+          className="px-6 py-3 bg-primary text-white rounded-2xl font-bold flex items-center gap-2 mx-auto justify-center hover:scale-105 active:scale-95 transition-all shadow"
         >
-          ابدأ التمرين الآن 🎙️
+          <span>ابدأ التمرين الآن</span>
+          <Mic size={18} />
         </button>
       </div>
     </div>
@@ -701,13 +807,13 @@ const Progress = () => {
   const { stats, attempts, chartData } = data;
 
   const getMotivation = () => {
-    if (chartData?.length < 2) return "ابدأ التدريب لتتبع تقدمك! 🚀";
+    if (chartData?.length < 2) return "ابدأ التدريب لتتبع تقدمك!";
     // Filter out zero scores for trend analysis if needed, but here we just take last non-zero days or just last 2 from chart
     const last2 = chartData?.filter((d: any) => d.score > 0).slice(-2);
-    if (last2?.length < 2) return "حافظ على استمرارية التدريب للوصول للقمة! 🎯";
-    if (last2[1].score > last2[0].score) return "أداؤك في تحسن مستمر! 🎉";
-    if (last2[1].score === last2[0].score) return "حافظ على هذا المستوى! 💪";
-    return "لا تستسلم، التدريب يصنع الفارق! 🌟";
+    if (last2?.length < 2) return "حافظ على استمرارية التدريب للوصول للقمة!";
+    if (last2[1].score > last2[0].score) return "أداؤك في تحسن مستمر!";
+    if (last2[1].score === last2[0].score) return "حافظ على هذا المستوى!";
+    return "لا تستسلم، التدريب يصنع الفارق!";
   };
 
   return (
@@ -723,8 +829,8 @@ const Progress = () => {
         {insights && (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
-              <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center text-3xl">
-                🔥
+              <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-500">
+                <Flame size={28} />
               </div>
               <div>
                 <p className="text-slate-400 text-sm font-bold">سلسلة التدريب</p>
@@ -735,8 +841,8 @@ const Progress = () => {
             </div>
             
             <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
-              <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-3xl">
-                {insights.trend === 'improving' ? '📈' : insights.trend === 'declining' ? '📉' : '➡️'}
+              <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-500">
+                {insights.trend === 'improving' ? <TrendingUp size={28} /> : insights.trend === 'declining' ? <TrendingDown size={28} /> : <ArrowRight size={28} />}
               </div>
               <div>
                 <p className="text-slate-400 text-sm font-bold">الاتجاه</p>
@@ -753,7 +859,10 @@ const Progress = () => {
             {/* رسائل تحفيزية */}
             {insights.insights.length > 0 && (
               <div className="bg-gradient-to-l from-blue-50 to-purple-50 p-4 rounded-3xl border border-blue-100 col-span-2 md:col-span-1">
-                <p className="text-sm font-bold text-blue-800 mb-2">💬 رسائلك</p>
+                <p className="text-sm font-bold text-blue-800 mb-2 flex items-center gap-1.5 justify-end">
+                  <MessageSquare size={16} />
+                  <span>رسائلك</span>
+                </p>
                 {insights.insights.slice(0, 2).map((insight, i) => (
                   <p key={i} className="text-sm text-blue-700">{insight}</p>
                 ))}
@@ -768,7 +877,7 @@ const Progress = () => {
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                 className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4"
             >
-                <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-3xl">🏆</div>
+                <div className="w-14 h-14 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center shadow-inner"><Trophy size={28} /></div>
                 <div>
                    <p className="text-slate-400 text-sm font-bold">أفضل نتيجة</p>
                    <p className="text-3xl font-black text-slate-800 tracking-tight">{stats?.bestScore}%</p>
@@ -778,7 +887,7 @@ const Progress = () => {
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                 className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4"
             >
-                <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-3xl">📊</div>
+                <div className="w-14 h-14 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center shadow-inner"><BarChart3 size={28} /></div>
                 <div>
                    <p className="text-slate-400 text-sm font-bold">متوسط النتائج</p>
                    <p className="text-3xl font-black text-slate-800 tracking-tight">{stats?.averageScore}%</p>
@@ -788,7 +897,7 @@ const Progress = () => {
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
                 className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4"
             >
-                <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-3xl">✅</div>
+                <div className="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center shadow-inner"><CheckCircle2 size={28} /></div>
                 <div>
                    <p className="text-slate-400 text-sm font-bold">عدد التمارين</p>
                    <p className="text-3xl font-black text-slate-800 tracking-tight">{stats?.totalAttempts}</p>
@@ -908,23 +1017,23 @@ const Progress = () => {
                 title: '5 تمارين يومياً', 
                 current: Math.min(stats?.totalAttempts || 0, 5), 
                 target: 5, 
-                icon: '🎯' 
+                icon: <Target size={18} className="text-rose-500" />
               },
               { 
                 title: 'احصل على 80% في تمرين', 
                 current: stats?.bestScore >= 80 ? 1 : 0, 
                 target: 1, 
-                icon: '⭐' 
+                icon: <Award size={18} className="text-amber-500" />
               },
               { 
                 title: '3 أيام متواصلة', 
                 current: Math.min(insights?.streakDays || 0, 3), 
                 target: 3, 
-                icon: '🔥' 
+                icon: <Flame size={18} className="text-orange-500" />
               }
             ].map((challenge, i) => (
               <div key={i} className="flex items-center gap-4">
-                <span className="text-2xl">{challenge.icon}</span>
+                <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center shrink-0">{challenge.icon}</div>
                 <div className="flex-1">
                   <div className="flex justify-between mb-1">
                     <span className="text-sm font-bold text-slate-700">{challenge.title}</span>
@@ -1129,6 +1238,20 @@ const Training = () => {
     draw();
   }, []);
 
+  // Handle canvas animation when entering recording state
+  useEffect(() => {
+    if (step === 'recording' && isRecording && canvasRef.current) {
+      // Small timeout to ensure DOM is ready
+      const timer = setTimeout(() => {
+        startCanvasAnimation();
+      }, 50);
+      return () => {
+        clearTimeout(timer);
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      }
+    }
+  }, [step, isRecording, startCanvasAnimation]);
+
   const startRecording = async () => {
     try {
       // Professional audio constraints
@@ -1221,11 +1344,9 @@ const Training = () => {
             if (currentVol > maxVolumeRef.current) {
                maxVolumeRef.current = currentVol;
             }
-            requestAnimationFrame(monitorVolume);
+            animationFrameRef.current = requestAnimationFrame(monitorVolume);
           };
           monitorVolume();
-
-          startCanvasAnimation();
         }
       } catch (err) {
         console.warn("AudioContext init failed, using CSS fallback", err);
@@ -1256,15 +1377,26 @@ const Training = () => {
         setAudioBlob(blob);
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
-        // Don't auto-analyze - let user preview first
-        setStep('display');
       };
 
       mediaRecorderRef.current.start(100); // Collect data every 100ms for smoother recording
       setIsRecording(true);
       setStep('recording');
       setRecordingTime(0);
-      timerRef.current = setInterval(() => setRecordingTime(prev => prev + 1), 1000);
+      timerRef.current = setInterval(() => {
+        setRecordingTime(prev => {
+          if (prev >= 29) {
+            // Use timeout to ensure stopRecording is called outside the state update
+            setTimeout(() => {
+              if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                stopRecording();
+              }
+            }, 0);
+            return 30;
+          }
+          return prev + 1;
+        });
+      }, 1000);
     } catch (err) {
       alert('يرجى تفعيل الميكروفون للمتابعة');
     }
@@ -1440,322 +1572,382 @@ const Training = () => {
   if (error) return <div className="h-screen flex items-center justify-center text-red-500 font-bold">{error}</div>;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex flex-col min-h-screen bg-slate-50" dir="rtl">
       <Navbar />
-      
-      {sessionProgress.attempts > 0 && (
-        <div className="flex items-center justify-center gap-4 p-3 bg-blue-50 text-sm max-w-4xl mx-auto w-full rounded-b-2xl mb-4">
-          <span className="text-blue-700 font-bold">
-            جلستك: {sessionProgress.attempts} محاولة
-          </span>
-          <span className="text-blue-600">
-            متوسط: {Math.round(sessionProgress.totalScore / sessionProgress.attempts)}%
-          </span>
-          <span className="text-blue-600">
-            أفضل: {sessionProgress.bestScore}%
-          </span>
+      <main className="flex-1 max-w-2xl mx-auto w-full px-4 pt-6 pb-28 md:pb-8">
+
+        {/* Page Header */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-black text-slate-800">التدريب الصوتي</h2>
+          <p className="text-slate-500 text-sm mt-1">سجّل صوتك وتلقَّ تحليلاً فورياً بالذكاء الاصطناعي</p>
         </div>
-      )}
 
-      <main className="flex-1 max-w-4xl mx-auto w-full p-4 md:p-8">
-        <AnimatePresence mode="wait">
-          {/* STEP 1 & 2: Display & Recording */}
-          {(step === 'display' || step === 'recording') && (
+        {/* Session Progress Bar */}
+        {sessionProgress.attempts > 0 && (
+          <div className="bg-white rounded-2xl p-4 mb-4 border border-violet-50 shadow-sm flex items-center gap-4">
+            <div className="flex-1">
+              <div className="flex justify-between text-xs font-bold text-slate-500 mb-1">
+                <span>المحاولات: {sessionProgress.attempts}</span>
+                <span>أفضل: {sessionProgress.bestScore}%</span>
+              </div>
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full natqi-gradient rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(sessionProgress.bestScore, 100)}%` }}
+                />
+              </div>
+            </div>
+            <div className="text-center text-amber-500">
+              <Trophy size={20} />
+            </div>
+          </div>
+        )}
+
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-20 space-y-4">
+            <div className="w-12 h-12 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin" />
+            <p className="text-slate-500 font-bold">جارٍ تحميل التمرين...</p>
+          </div>
+        )}
+
+        {error && !loading && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
+            <p className="text-red-600 font-bold mb-4">{error}</p>
+            <button onClick={loadNewExercise} className="px-6 py-3 natqi-gradient text-white rounded-xl font-bold">
+              إعادة المحاولة
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && exercise && (
+          <AnimatePresence mode="wait">
+          {/* ── STEP: DISPLAY ── */}
+          {step === 'display' && (
             <motion.div 
-              key="exercise"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.05 }}
-              className="space-y-8 text-center"
+              key="display" 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              exit={{ opacity: 0, y: -20 }} 
+              className="space-y-4"
             >
-              <div className="flex justify-center gap-2">
-                <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold">{exercise.category}</span>
-                <span className="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-xs font-bold">{exercise.level}</span>
-              </div>
+              <div className="bg-white rounded-3xl p-6 border border-violet-50 shadow-sm text-right">
+                <div className="flex items-center gap-2 mb-4 justify-end">
+                  <span className="px-3 py-1 natqi-gradient text-white rounded-full text-xs font-black">{exercise.category}</span>
+                  <span className="px-3 py-1 bg-violet-50 text-violet-700 rounded-full text-xs font-bold">{exercise.level}</span>
+                  {exercise.difficulty && <span className="px-3 py-1 bg-slate-50 text-slate-500 rounded-full text-xs font-bold">صعوبة: {exercise.difficulty}/5</span>}
+                </div>
+                <h3 className="text-xl font-black text-slate-800 mb-3">{exercise.title}</h3>
+                {exercise.description && <p className="text-slate-500 text-sm mb-4 leading-relaxed">{exercise.description}</p>}
 
-              <div className="space-y-4">
-                <h2 className="text-4xl md:text-6xl font-black text-slate-800 leading-tight">
-                  {exercise.text}
-                </h2>
-                {user?.category === 'non-native' && (
-                  <p className="text-xl text-slate-400 font-medium">{exercise.text_translation}</p>
-                )}
-              </div>
-
-              {/* Tips Section */}
-              <div className="max-w-md mx-auto">
-                <button 
-                  onClick={() => setShowTips(!showTips)}
-                  className="flex items-center gap-2 mx-auto text-primary font-bold hover:bg-primary/5 px-4 py-2 rounded-lg transition-all"
-                >
-                  <Lightbulb size={18} />
-                  نصائح النطق
-                </button>
-                <AnimatePresence>
-                  {showTips && (
-                    <motion.div 
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden mt-3"
-                    >
-                      <div className="p-4 bg-yellow-50 text-yellow-800 rounded-2xl text-sm leading-relaxed border border-yellow-100">
-                        {exercise.tips}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Recording UI */}
-              <div className="pt-12 space-y-6">
-                {step === 'recording' && (
-                  <div className="space-y-4">
-                    <div className="relative w-full max-w-md mx-auto">
-                      <canvas
-                        ref={canvasRef}
-                        className="w-full h-24 rounded-2xl bg-slate-50 border border-slate-100"
-                      />
-                      {/* Volume indicator */}
-                      <div className="absolute bottom-2 right-3 flex items-center gap-2">
-                        <div className="flex gap-0.5 h-4 items-end">
-                          {[...Array(8)].map((_, i) => (
-                            <div
-                              key={i}
-                              className="w-1 bg-primary rounded-full transition-all duration-75"
-                              style={{
-                                height: `${Math.min(100, Math.max(15, volumeLevel * (i + 1) / 4))}%`,
-                                opacity: volumeLevel > (i * 12) ? 1 : 0.3
-                              }}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-2xl font-mono text-primary font-bold">{formatTime(recordingTime)}</p>
-                    {volumeLevel < 10 && recordingTime > 2 && (
-                      <p className="text-xs text-amber-500 font-medium">🔇 الصوت ضعيف جداً، حاول التحدث بصوت أعلى</p>
-                    )}
-                    {volumeLevel > 85 && (
-                      <p className="text-xs text-red-500 font-medium">🔊 الصوت مرتفع جداً، قد يحدث تشويه</p>
-                    )}
-                  </div>
-                )}
-
-                {/* Preview after recording */}
-                {audioUrl && !isRecording && step !== 'analyzing' && step !== 'results' && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-white rounded-2xl border border-slate-100 p-4 max-w-md mx-auto space-y-3"
-                  >
-                    <p className="text-sm font-bold text-slate-600">🎧 معاينة التسجيل</p>
-                    <div className="flex items-center justify-center gap-4">
-                      <button
-                        onClick={playPreview}
-                        className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center hover:scale-105 transition-transform"
-                      >
-                        {isPlayingPreview ? <Pause size={20} /> : <Play size={20} />}
-                      </button>
-                      <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-primary/60 rounded-full" style={{ width: '100%' }} />
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={submitRecording}
-                        className="flex-1 py-2.5 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary/90 transition-colors"
-                      >
-                        إرسال للتحليل
-                      </button>
-                      <button
-                        onClick={discardRecording}
-                        className="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-colors"
-                      >
-                        إعادة التسجيل
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-
-                <div className="flex items-center justify-center gap-8">
-                  {step === 'recording' ? (
-                    <motion.button
-                      whileTap={{ scale: 0.9 }}
-                      onClick={stopRecording}
-                      className="w-20 h-20 bg-red-500 text-white rounded-full flex items-center justify-center shadow-xl shadow-red-500/30"
-                    >
-                      <StopCircle size={40} />
-                    </motion.button>
-                  ) : (
-                    !audioUrl && (
-                      <motion.button
-                        whileTap={{ scale: 0.9 }}
-                        animate={{ scale: [1, 1.1, 1] }}
-                        transition={{ repeat: Infinity, duration: 2 }}
-                        onClick={startRecording}
-                        className="w-20 h-20 bg-primary text-white rounded-full flex items-center justify-center shadow-xl shadow-primary/30"
-                      >
-                        <Mic size={40} />
-                      </motion.button>
-                    )
+                <div className="natqi-gradient-soft rounded-2xl p-5 border border-violet-100">
+                  <p className="text-slate-800 text-2xl font-bold leading-loose text-center">{exercise.text}</p>
+                  {exercise.text_translation && (
+                    <p className="text-slate-500 text-sm mt-3 pt-3 border-t border-violet-100 italic text-center">{exercise.text_translation}</p>
                   )}
                 </div>
-                {!audioUrl && (
-                  <p className="text-slate-400 font-medium">
-                    {step === 'recording' ? "اضغط للإيقاف عند الانتهاء" : "اضغط على الميكروفون للبدء"}
-                  </p>
+
+                {exercise.tips && (
+                  <div className="mt-4 bg-amber-50 border border-amber-100 rounded-2xl p-4 flex gap-3 justify-end items-start">
+                    <p className="text-amber-700 text-sm font-medium flex-1 text-right">{exercise.tips}</p>
+                    <Lightbulb size={18} className="text-amber-500 shrink-0 mt-0.5" />
+                  </div>
                 )}
               </div>
+
+              <button
+                onClick={startRecording}
+                className="w-full py-5 natqi-gradient rounded-[2rem] text-white text-xl font-black shadow-2xl shadow-violet-400/40 flex items-center justify-center gap-3 hover:brightness-110 transition-all"
+              >
+                <Mic size={28} /> ابدأ التسجيل
+              </button>
+              <button 
+                onClick={loadNewExercise} 
+                className="w-full py-3 bg-white border-2 border-violet-100 text-violet-700 rounded-2xl font-bold hover:bg-violet-50 transition-all flex items-center justify-center gap-2"
+              >
+                <RefreshCw size={18} /> تمرين آخر
+              </button>
             </motion.div>
           )}
 
-          {/* STEP 3: Analyzing */}
-          {step === 'analyzing' && (
+          {/* ── STEP: RECORDING ── */}
+          {step === 'recording' && (
             <motion.div 
-              key="analyzing"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="h-[60vh] flex flex-col items-center justify-center space-y-6"
+              key="recording" 
+              initial={{ opacity: 0, scale: 0.95 }} 
+              animate={{ opacity: 1, scale: 1 }} 
+              exit={{ opacity: 0, scale: 0.95 }} 
+              className="space-y-4 text-center"
             >
-              <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-              <h2 className="text-2xl font-bold text-slate-800 tracking-tight">جارٍ تحليل صوتك...</h2>
-            </motion.div>
-          )}
+              <div className="bg-white rounded-3xl p-6 border border-violet-50 shadow-sm">
+                <p className="text-slate-700 text-2xl font-bold leading-loose text-center mb-4">{exercise.text}</p>
+              </div>
 
-          {/* STEP 4: Results */}
-          {step === 'results' && analysisResult && (
-            <motion.div 
-              key="results"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-12"
-            >
-              <div className="flex flex-col md:flex-row items-center gap-12 justify-center">
-                {/* Star Rating */}
-                {(() => {
-                  const rating = getStarRating(analysisResult.score);
-                  return (
-                    <div className="text-center space-y-3">
-                      <div className={cn("text-6xl font-black", rating.color)}>
-                        {analysisResult.score}%
-                      </div>
-                      <div className="flex justify-center gap-1" dir="ltr">
-                        {[1,2,3,4,5].map(s => (
-                          <span key={s} className={cn("text-4xl", s <= rating.stars ? rating.color : 'text-slate-200')}>
-                            ★
-                          </span>
+              <div className="bg-white rounded-3xl p-8 border border-violet-50 shadow-sm flex flex-col items-center gap-6">
+                {/* Waveform Canvas */}
+                <div className="w-full h-20 bg-slate-50 rounded-2xl overflow-hidden border border-violet-100 relative">
+                  <canvas ref={canvasRef} className="w-full h-full" />
+                  {/* Volume indicator */}
+                  {isRecording && (
+                    <div className="absolute bottom-2 right-3 flex items-center gap-2">
+                      <div className="flex gap-0.5 h-4 items-end">
+                        {[...Array(8)].map((_, i) => (
+                          <div
+                            key={i}
+                            className="w-1 bg-violet-600 rounded-full transition-all duration-75"
+                            style={{
+                              height: `${Math.min(100, Math.max(15, volumeLevel * (i + 1) / 4))}%`,
+                              opacity: volumeLevel > (i * 12) ? 1 : 0.3
+                            }}
+                          />
                         ))}
                       </div>
-                      <p className={cn("font-bold text-xl", rating.color)}>{rating.label}</p>
                     </div>
-                  );
-                })()}
-
-                <div className="max-w-md space-y-4 text-center md:text-right">
-                  <h3 className="text-3xl font-bold text-slate-800">تحليل الأداء</h3>
-                  <p className="text-slate-600 text-lg leading-relaxed">{analysisResult.feedback}</p>
+                  )}
                 </div>
-              </div>
 
-              {analysisResult.isAi === false && (
-                <div id="fallback-quota-warning" className="bg-amber-50/70 border border-amber-200/60 rounded-[2rem] p-6 text-right space-y-3 shadow-sm max-w-2xl mx-auto">
-                  <div className="flex items-center gap-2 justify-end text-amber-800 font-bold text-lg">
-                    <span>⚠️</span>
-                    <span>تنبيه: التقييم الصوتي المحلي مفعل</span>
-                  </div>
-                  <p className="text-amber-700/95 leading-relaxed text-sm">
-                    نظراً لأن حصة الاستخدام المجانية لنظام الذكاء الاصطناعي (Gemini Free Quota) قد استُنفدت مؤقتاً، فقد قمنا بتفعيل نظام التحليل التقريبي المحلي لمتابعة تدريبك دون توقف. ننصح بتجربة المحاولة لاحقاً للحصول على تحليل صوتي دقيق عبر الذكاء الاصطناعي.
-                  </p>
+                {/* Timer */}
+                <div className="flex items-center gap-3">
+                  <div className={cn("w-3 h-3 rounded-full", isRecording ? "bg-red-500 animate-pulse" : "bg-slate-300")} />
+                  <span className="font-mono text-2xl font-black text-slate-700">
+                    {formatTime(recordingTime)}
+                  </span>
                 </div>
-              )}
 
-              {/* Mistake Tips */}
-              {analysisResult?.mistakes?.length > 0 && (
-                <div className="bg-amber-50 rounded-2xl p-5 space-y-3">
-                  <h4 className="font-bold text-amber-800 flex items-center gap-2">
-                    <span>⚠️</span> كلمات تحتاج انتباهك
-                  </h4>
-                  {analysisResult.mistakes.map((mistake: any, i: number) => (
-                    <div key={i} className="bg-white rounded-xl p-4 border border-amber-100 flex flex-col text-right">
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="text-xl font-black text-amber-700 font-arabic">{mistake.word}</span>
-                        {mistake.severity === 'major' && (
-                          <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded-full font-bold">صعب</span>
-                        )}
-                      </div>
-                      <p className="text-sm text-slate-600 font-medium">{mistake.tip}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Text with Mistake Highlighting */}
-              <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-slate-100 border border-slate-50">
-                <div className="flex flex-wrap justify-center gap-x-4 gap-y-6 text-4xl md:text-5xl font-bold">
-                  {exercise.text.split(' ').map((word: string, idx: number) => {
-                    const isMistake = analysisResult.mistakes.some((m: any) => m.word === word);
-                    return (
-                      <span 
-                        key={idx} 
-                        className={cn(
-                          "relative group transition-colors",
-                          isMistake ? "text-red-500 underline decoration-wavy decoration-red-300 underline-offset-8" : "text-slate-800"
-                        )}
-                      >
-                        {word}
-                        {isMistake && (
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 hidden group-hover:block z-20">
-                            <div className="bg-slate-800 text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap shadow-xl">
-                              النطق الصحيح: {word}
-                            </div>
-                          </div>
-                        )}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-4">
-                <button
-                  onClick={() => playAudio(exercise.audio_correct_url, exercise.text)}
-                  className="w-full py-4 bg-slate-50 text-slate-700 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all border border-slate-100"
-                >
-                  <Volume2 /> استمع للنطق الصحيح
-                </button>
-
-                {user?.category === 'non-native' && (
-                  <button
-                    onClick={() => playAudio(exercise.audio_correct_url, exercise.text, 0.75)}
-                    className="w-full py-4 bg-slate-50 text-slate-500 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all border border-slate-100 italic"
+                {/* Big Mic Button */}
+                {!isRecording && !audioUrl && (
+                  <motion.button
+                    whileTap={{ scale: 0.92 }}
+                    onClick={startRecording}
+                    className="w-24 h-24 natqi-gradient rounded-full flex items-center justify-center shadow-2xl shadow-violet-500/50"
                   >
-                    🐢 نطق بطيء
-                  </button>
+                    <Mic size={40} className="text-white" />
+                  </motion.button>
                 )}
 
-                <div className="grid grid-cols-2 gap-4 pt-4">
-                  <button 
-                    onClick={() => {
-                      setStep('display');
-                      setAnalysisResult(null);
-                    }}
-                    className="py-4 bg-white border-2 border-slate-100 rounded-2xl flex items-center justify-center gap-2 font-bold text-slate-600 hover:bg-slate-50 transition-all"
+                {isRecording && (
+                  <motion.button
+                    whileTap={{ scale: 0.92 }}
+                    onClick={stopRecording}
+                    className="w-24 h-24 bg-red-500 rounded-full flex items-center justify-center shadow-2xl shadow-red-400/50 animate-pulse"
                   >
-                    <RotateCcw size={20} /> إعادة
-                  </button>
-                  <button 
-                    onClick={loadNewExercise}
-                    className="py-4 bg-primary text-white rounded-2xl flex items-center justify-center gap-2 font-black shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all text-xl"
-                  >
-                    التالي <ChevronLeft />
-                  </button>
-                </div>
+                    <StopCircle size={40} className="text-white" />
+                  </motion.button>
+                )}
+
+                {audioUrl && !isRecording && (
+                  <div className="w-full space-y-3">
+                    <div className="flex items-center gap-2 bg-violet-50 rounded-2xl p-3">
+                      <button onClick={playPreview} className="w-10 h-10 natqi-gradient rounded-xl flex items-center justify-center text-white">
+                        {isPlayingPreview ? <Pause size={18} /> : <Play size={18} />}
+                      </button>
+                      <span className="text-slate-600 text-sm font-bold flex-1">معاينة التسجيل ({recordingTime}ث)</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button 
+                        onClick={discardRecording} 
+                        className="py-3 border-2 border-red-100 text-red-500 rounded-2xl font-bold text-sm hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+                      >
+                        <RotateCcw size={16} /> إعادة تسجيل
+                      </button>
+                      <button 
+                        onClick={submitRecording} 
+                        className="py-3 natqi-gradient text-white rounded-2xl font-black text-sm shadow-lg shadow-violet-400/30 hover:brightness-110 transition-all"
+                      >
+                        <div className="flex items-center justify-center gap-1.5">
+                          <span>تحليل الصوت</span>
+                          <Sparkles size={16} />
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
+
+          {/* ── STEP: ANALYZING ── */}
+          {step === 'analyzing' && (
+            <motion.div 
+              key="analyzing" 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center py-20 space-y-6"
+            >
+              <div className="relative w-28 h-28">
+                <div className="absolute inset-0 natqi-gradient rounded-full opacity-20 animate-ping" />
+                <div className="absolute inset-2 natqi-gradient rounded-full opacity-40 animate-ping" style={{ animationDelay: '0.3s' }} />
+                <div className="relative w-full h-full natqi-gradient rounded-full flex items-center justify-center shadow-2xl shadow-violet-400/40">
+                  <Sparkles size={40} className="text-white animate-pulse" />
+                </div>
+              </div>
+              <div className="text-center space-y-2 px-6">
+                <p className="text-slate-800 font-black text-xl">جارٍ استخراج النتائج...</p>
+                <p className="text-slate-500 text-sm max-w-xs mx-auto">
+                   نقوم بتقييم نطقك حالياً ومقارنته بمخارج الحروف الصحيحة.
+                </p>
+              </div>
+              <div className="flex gap-1.5">
+                {[0,1,2,3,4].map(i => (
+                  <motion.div 
+                    key={i} 
+                    animate={{ 
+                      scale: [1, 1.5, 1],
+                      opacity: [0.3, 1, 0.3]
+                    }}
+                    transition={{ 
+                      duration: 1, 
+                      repeat: Infinity, 
+                      delay: i * 0.15 
+                    }}
+                    className="w-2.5 h-2.5 natqi-gradient rounded-full" 
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── STEP: RESULTS ── */}
+          {step === 'results' && analysisResult && (() => {
+            const { stars, color, label } = getStarRating(analysisResult.score);
+            return (
+              <motion.div 
+                key="results" 
+                initial={{ opacity: 0, y: 20 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-4"
+              >
+                {/* Score Card */}
+                <div className="natqi-gradient rounded-3xl p-6 text-center relative overflow-hidden shadow-2xl shadow-violet-400/30">
+                  <div className="absolute top-[-30px] right-[-30px] w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+                  <p className="text-white/80 text-sm font-bold mb-2">نتيجة التحليل</p>
+                  <div className="text-7xl font-black text-white mb-2">{analysisResult.score}%</div>
+                  <div className={cn("text-2xl font-bold mb-2", color.replace('text-', 'text-white/'))}>
+                    {'★'.repeat(stars)}{'☆'.repeat(5 - stars)} <span className="text-white/90 text-lg">{label}</span>
+                  </div>
+                  <p className="text-white/95 text-sm max-w-md mx-auto leading-relaxed mt-2">{analysisResult.feedback}</p>
+                </div>
+
+                {/* Detailed Scores */}
+                {analysisResult.breakdown && (
+                  <div className="bg-white rounded-3xl p-5 border border-violet-50 shadow-sm text-right">
+                    <h4 className="font-black text-slate-800 mb-4 text-sm">التقييم التفصيلي</h4>
+                    {Object.entries(analysisResult.breakdown).map(([key, val]: [string, any]) => (
+                      <div key={key} className="flex items-center gap-3 mb-3">
+                        <span className="text-xs text-slate-500 font-bold w-20 shrink-0 text-right">{
+                          key === 'pronunciation' ? 'النطق' : key === 'fluency' ? 'الطلاقة' : key === 'accuracy' ? 'الدقة' : key
+                        }</span>
+                        <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${val}%` }}
+                            transition={{ duration: 0.8, ease: "easeOut" }}
+                            className="h-full natqi-gradient rounded-full"
+                          />
+                        </div>
+                        <span className="text-xs font-black text-violet-700 w-8 text-left">{val}%</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Mistake Tips */}
+                {analysisResult.mistakes?.length > 0 && (
+                  <div className="bg-amber-50 rounded-2xl p-5 space-y-3 text-right">
+                    <h4 className="font-bold text-amber-850 flex items-center gap-2 justify-end text-sm">
+                      <AlertTriangle size={16} className="text-amber-600 shrink-0" />
+                      <span>كلمات تحتاج انتباهك</span>
+                    </h4>
+                    {analysisResult.mistakes.map((mistake: any, i: number) => (
+                      <div key={i} className="bg-white rounded-xl p-4 border border-amber-100 flex flex-col text-right">
+                        <div className="flex items-center gap-3 mb-2 justify-end">
+                          {mistake.severity === 'major' && (
+                            <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded-full font-bold">صعب</span>
+                          )}
+                          <span className="text-lg font-black text-amber-700 font-arabic">{mistake.word}</span>
+                        </div>
+                        <p className="text-xs text-slate-600 font-medium">{mistake.tip}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Text with errors */}
+                <div className="bg-white rounded-3xl p-5 border border-violet-50 shadow-sm text-right">
+                  <h4 className="font-black text-slate-800 mb-3 text-sm">النص مع إبراز الأخطاء</h4>
+                  <div className="flex flex-wrap justify-end gap-x-3 gap-y-4 text-2xl font-bold leading-relaxed" dir="rtl">
+                    {exercise.text.split(' ').map((word: string, i: number) => {
+                      const isMistake = analysisResult.mistakes?.some((m: any) => m.word === word);
+                      return (
+                        <span 
+                          key={i} 
+                          className={cn(
+                            "relative group px-2 py-1 rounded-xl transition-colors cursor-help",
+                            isMistake 
+                              ? "bg-red-50 text-red-500 border border-red-100/50 line-through decoration-red-300" 
+                              : "bg-green-50 text-green-700 border border-green-100/50"
+                          )}
+                        >
+                          {word}
+                          {isMistake && (
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 hidden group-hover:block z-20">
+                              <div className="bg-slate-850 text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap shadow-xl">
+                                النطق الصحيح: {word}
+                              </div>
+                            </div>
+                          )}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Recognized text */}
+                {recognizedText && (
+                  <div className="bg-white rounded-3xl p-5 border border-violet-50 shadow-sm text-right">
+                    <h4 className="font-black text-slate-800 mb-2 text-sm">ما تم التعرف عليه:</h4>
+                    <p className="text-slate-600 text-base leading-loose text-center">{recognizedText}</p>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="grid grid-cols-2 gap-3 text-right">
+                  {exercise.audio_correct_url && (
+                    <button
+                      onClick={() => playAudio(exercise.audio_correct_url, exercise.text)}
+                      className="py-4 bg-white border-2 border-violet-100 text-violet-700 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-violet-50 transition-all col-span-2"
+                    >
+                      <Volume2 size={20} /> استمع للنطق الصحيح
+                    </button>
+                  )}
+                  {user?.category === 'non-native' && exercise.audio_correct_url && (
+                    <button
+                      onClick={() => playAudio(exercise.audio_correct_url, exercise.text, 0.75)}
+                      className="py-4 bg-white border-2 border-violet-100 text-violet-500 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-violet-50 transition-all col-span-2 italic"
+                    >
+                      <Gauge size={16} className="text-violet-500 shrink-0" />
+                      <span>نطق بطيء (0.75x)</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { setStep('display'); setAnalysisResult(null); setAudioUrl(null); setRecordingTime(0); }}
+                    className="py-4 border-2 border-slate-200 text-slate-600 rounded-2xl font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                  >
+                    <RotateCcw size={18} /> إعادة
+                  </button>
+                  <button 
+                    onClick={loadNewExercise} 
+                    className="py-4 natqi-gradient text-white rounded-2xl font-black shadow-lg shadow-violet-400/30 hover:brightness-110 transition-all flex items-center justify-center"
+                  >
+                    التالي ←
+                  </button>
+                </div>
+              </motion.div>
+            );
+          })()}
         </AnimatePresence>
+      )}
       </main>
     </div>
   );
@@ -1846,6 +2038,71 @@ const getYoutubeId = (url: string) => {
 };
 
 // Library Screen
+// Video Player Component to handle stable playback during transitions
+const VideoPlayerModal = ({ video, item, onClose }: { video: string, item: any, onClose: () => void }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
+        className="bg-slate-900 rounded-3xl overflow-hidden w-full max-w-3xl shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-4 border-b border-white/10">
+          <h4 className="text-white font-black">{item?.title}</h4>
+          <button onClick={onClose} className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white hover:bg-white/20">✕</button>
+        </div>
+        <div className="aspect-video bg-black flex items-center justify-center relative">
+          <div className="w-full h-full relative group">
+            {video.includes('youtube') || video.includes('youtu.be') ? (
+              <iframe
+                width="100%"
+                height="100%"
+                src={`https://www.youtube.com/embed/${(() => {
+                  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                  const match = video.match(regExp);
+                  return (match && match[2].length >= 11) ? match[2].substring(0, 11) : video.split('embed/')[1]?.split('?')[0] || '';
+                })()}?autoplay=1&rel=0`}
+                title="YouTube video player"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="w-full h-full"
+              ></iframe>
+            ) : (
+              <div className="w-full h-full">
+                {(() => {
+                  const Player = ReactPlayer as any;
+                  return (
+                    <Player 
+                      key={video}
+                      url={video} 
+                      width="100%" 
+                      height="100%" 
+                      controls 
+                      playing 
+                      onError={(e: any) => {
+                        console.error("ReactPlayer Error:", e);
+                      }}
+                    />
+                  );
+                })()}
+              </div>
+            )}
+            <div className="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg text-[10px] text-white flex items-center gap-2 pointer-events-none">
+               <ExternalLink size={12} />
+               <span className="hover:underline">المشغل المباشر</span>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
 const Library = () => {
   const { user, token } = useAuth();
   const navigate = useNavigate();
@@ -1857,13 +2114,14 @@ const Library = () => {
   // High fidelity play states
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
-  const [playerServer, setPlayerServer] = useState<'nocookie' | 'standard'>('nocookie');
+  const [playerServer, setPlayerServer] = useState<'nocookie' | 'standard'>('standard');
   const [customUrl, setCustomUrl] = useState('');
   const [customError, setCustomError] = useState('');
 
   // Admin States
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState<any>({});
+  const [adminSaving, setAdminSaving] = useState(false);
 
   const tabs = [
     { id: 'all', label: 'الكل' },
@@ -1908,6 +2166,7 @@ const Library = () => {
 
   const handleAdminSave = async (e: any) => {
     e.preventDefault();
+    setAdminSaving(true);
     try {
       const method = editFormData.id ? 'PUT' : 'POST';
       const url = editFormData.id ? `/api/library/${editFormData.id}` : `/api/library`;
@@ -1936,9 +2195,11 @@ const Library = () => {
         const errorData = await res.json();
         alert(errorData.error || 'Failed to save');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Error occurred');
+      alert('Error occurred: ' + err.message);
+    } finally {
+      setAdminSaving(false);
     }
   };
 
@@ -1948,450 +2209,201 @@ const Library = () => {
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50/50">
-      <Navbar />
-      <main className="flex-1 max-w-7xl mx-auto w-full p-4 md:p-8 space-y-8 text-right" dir="rtl">
-        <header className="space-y-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 pb-6">
-            <div className="space-y-1">
-              <h2 className="text-3xl font-black text-slate-800 tracking-tight">المكتبة التعليمية</h2>
-              <p className="text-xs text-slate-500 font-bold">بث مرئي ومسموع لأرقى مناهج وعلم مخارج الحروف العربية وأحكام التلاوة</p>
-            </div>
-            
-            <div className="relative w-full md:w-80">
-              <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <input 
-                type="text" 
-                placeholder="ابحث عن نص أو درس أو أستاذ..."
-                className="w-full pr-12 pl-4 py-3 bg-white border border-slate-200/65 rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-primary transition-all text-sm text-slate-800"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
+  <div className="min-h-screen flex flex-col bg-slate-50" dir="rtl">
+    <Navbar />
+    <main className="flex-1 max-w-4xl mx-auto w-full px-4 pt-6 pb-28 md:pb-8 space-y-5">
 
-          <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-2 rounded-[2rem] border border-slate-100/80 shadow-sm">
-            <div className="flex bg-slate-50 p-1 rounded-2xl overflow-x-auto w-full md:w-auto">
-              {tabs.map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={cn(
-                    "px-6 py-2.5 rounded-xl font-bold text-sm transition-all whitespace-nowrap",
-                    activeTab === tab.id ? "bg-primary text-white shadow-md shadow-primary/20" : "text-slate-500 hover:bg-slate-100/70"
-                  )}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-4">
-              {user && user.role === 'admin' && (
-                <button
-                  onClick={() => {
-                    setEditFormData({});
-                    setIsEditing(true);
-                  }}
-                  className="px-4 py-2 bg-slate-800 text-white font-bold text-xs rounded-xl hover:bg-slate-700 transition-all shadow-md shadow-slate-800/20 flex items-center gap-2"
-                >
-                  <FileText size={14} /> إضافة مادة (أدمن)
-                </button>
-              )}
-              <div className="text-slate-400 text-xs font-bold pl-4 hidden md:block">
-                عدد المواد المتاحة: {filteredItems.length} مادة دراسية
-              </div>
-            </div>
+      {/* Header */}
+      <div className="natqi-gradient rounded-3xl p-6 relative overflow-hidden shadow-xl shadow-violet-400/25">
+        <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-white/8 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative z-10 flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-black text-white">المكتبة التعليمية</h2>
+            <p className="text-white/70 text-sm mt-1">بث مرئي ومسموع لمناهج علم مخارج الحروف العربية</p>
           </div>
-        </header>
-
-        {loading ? (
-          <div className="space-y-6 flex flex-col pt-8">
-            <div className="flex items-center justify-center gap-3 text-slate-400 font-bold mb-6">
-               <div className="w-5 h-5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></div>
-               جارٍ تحميل محتويات المكتبة والدروس الفصحى...
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {[1,2,3,4].map(i => <div key={i} className="h-64 bg-slate-100 animate-pulse rounded-[2rem]" />)}
-            </div>
+          <div className="w-12 h-12 glass-card rounded-2xl flex items-center justify-center text-white/95 shadow-inner">
+            <BookOpen size={24} />
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <AnimatePresence>
-              {filteredItems.map((item, idx) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-xl hover:-translate-y-1.5 transition-all flex flex-col group"
-                >
-                  <div className="h-44 bg-slate-100 relative overflow-hidden">
-                    <img 
-                      src={item.thumbnail} 
-                      alt={item.title} 
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      {item.type === 'video' ? (
-                        <div className="bg-primary hover:bg-primary-dark p-4 rounded-full shadow-lg text-white scale-90 group-hover:scale-100 transition-all duration-300">
-                          <Play className="fill-white" size={24} />
-                        </div>
-                      ) : (
-                        <div className="bg-slate-800 p-4 rounded-full shadow-lg text-white scale-90 group-hover:scale-100 transition-all duration-300">
-                          <FileText size={24} />
-                        </div>
-                      )}
-                    </div>
-                    <div className="absolute top-3 right-3 flex gap-2">
-                      <span className={cn(
-                        "px-2.5 py-1 bg-white/95 backdrop-blur-sm rounded-lg text-[10px] font-black text-slate-800 shadow-sm",
-                        item.type === 'video' ? "text-primary border border-primary/10" : "text-emerald-600 border border-emerald-100"
-                      )}>
-                        {item.type === 'video' ? '📺 مرئي (فيديو)' : '📄 كتاب (PDF)'}
-                      </span>
-                    </div>
-                  </div>
+        </div>
+      </div>
 
-                  <div className="p-5 flex-1 flex flex-col justify-between">
-                    <div className="space-y-2">
-                      <span className="text-[10px] font-black tracking-widest text-primary/80 uppercase px-2 py-0.5 bg-primary/10 rounded-md inline-block">
-                        {item.category === 'children' && 'فئة الأطفال 🧒'}
-                        {item.category === 'students' && 'فئة الطلاب 🎓'}
-                        {item.category === 'adults' && 'فئة البالغين 👤'}
-                        {item.category === 'non-native' && 'الناطقين لغير العربية 🌐'}
-                        {!['children', 'students', 'adults', 'non-native'].includes(item.category) && item.category}
-                      </span>
-                      <h4 className="font-bold text-slate-800 text-base line-clamp-2 leading-snug group-hover:text-primary transition-colors min-h-[44px]">
-                        {item.title}
-                      </h4>
-                      <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">
-                        {item.description}
-                      </p>
-                    </div>
-                    
-                    <div className="mt-5 pt-4 border-t border-slate-50 space-y-2">
-                      {item.type === 'video' ? (
-                        <button 
-                          onClick={() => {
-                            setSelectedItem(item);
-                            setSelectedVideo(item.url);
-                          }}
-                          className="w-full py-3 bg-primary hover:bg-primary/95 text-white rounded-xl font-bold flex items-center justify-center gap-2 text-xs shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all"
-                        >
-                          <Play size={14} fill="white" /> مشاهدة الشرح والتحليل
-                        </button>
-                      ) : (
-                        <a 
-                          href={item.url} 
-                          target="_blank" 
-                          rel="noreferrer"
-                          className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold flex items-center justify-center gap-2 text-xs transition-all"
-                        >
-                          <ExternalLink size={14} /> تحميل الكتاب المعتمد 📥
-                        </a>
-                      )}
-                      
-                      {/* Admin Controls */}
-                      {user && user.role === 'admin' && (
-                        <div className="flex gap-2 pt-2 border-t border-slate-50">
-                          <button
-                            onClick={() => {
-                              setEditFormData(item);
-                              setIsEditing(true);
-                            }}
-                            className="flex-1 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold rounded-xl text-[10px] transition-all flex items-center justify-center gap-1"
-                          >
-                            <Settings size={12} /> تعديل
-                          </button>
-                          <button
-                            onClick={() => handleAdminDelete(item.id)}
-                            className="flex-1 py-2 bg-red-50 text-red-600 hover:bg-red-100 font-bold rounded-xl text-[10px] transition-all flex items-center justify-center gap-1"
-                          >
-                            <Trash2 size={12} /> حذف
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        )}
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+        <input
+          type="text"
+          placeholder="ابحث عن درس أو نص..."
+          className="w-full pr-12 pl-4 py-4 bg-white border-2 border-violet-100 rounded-2xl shadow-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-200 transition-all text-slate-800"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
 
-        {!loading && filteredItems.length === 0 && (
-          <div className="text-center py-20 bg-white rounded-[3rem] border border-slate-100 shadow-sm flex flex-col items-center justify-center gap-4">
-            <p className="text-slate-400 font-bold text-lg">لا توجد نتائج تطابق بحثك داخل المكتبة حالياً</p>
-            <button 
-              onClick={() => setSearchQuery('')}
-              className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 text-xs rounded-xl transition-all"
-            >
-              عرض جميع الموارد
-            </button>
-          </div>
-        )}
-      </main>
-
-      {/* Advanced Dual-Pane Video Theater Modal */}
-      <AnimatePresence>
-        {selectedVideo && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 md:p-8"
+      {/* Tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={cn(
+              "px-5 py-2.5 rounded-xl font-black text-sm transition-all whitespace-nowrap shrink-0",
+              activeTab === tab.id
+                ? "natqi-gradient text-white shadow-md shadow-violet-300"
+                : "bg-white text-slate-500 border-2 border-slate-100 hover:border-violet-200"
+            )}
           >
-            <div className="w-full max-w-6xl bg-slate-950 border border-slate-800 rounded-[2rem] overflow-hidden shadow-2xl flex flex-col lg:flex-row h-full max-h-[90vh] md:max-h-[85vh] relative text-right">
-              {/* Close Button */}
-              <button 
-                onClick={() => {
-                  setSelectedVideo(null);
-                  setSelectedItem(null);
-                }}
-                className="absolute top-4 right-4 bg-slate-800/80 hover:bg-red-600 hover:rotate-90 transition-all text-white p-2 text-xs rounded-full z-40 shadow-md"
-                title="إغلاق اللاعب"
-              >
-                <X size={18} />
-              </button>
+            {tab.label}
+          </button>
+        ))}
+        {user && user.role === 'admin' && (
+          <button
+            onClick={() => { setEditFormData({}); setIsEditing(true); }}
+            className="px-5 py-2.5 bg-slate-800 text-white rounded-xl font-bold text-sm shrink-0 hover:bg-slate-700 transition-all"
+          >
+            + إضافة
+          </button>
+        )}
+      </div>
 
-              {/* Right Side: High-fidelity Player (65% width) */}
-              <div className="flex-1 bg-black flex flex-col justify-between p-4 md:p-6 border-b lg:border-b-0 lg:border-l border-slate-800 overflow-y-auto">
-                <div className="flex justify-between items-center mb-3 mt-4 lg:mt-0 gap-2">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setPlayerServer('nocookie')}
-                      className={cn(
-                        "text-[10px] sm:text-xs px-3 py-1.5 rounded-lg border font-bold transition-all",
-                        playerServer === 'nocookie' 
-                          ? "bg-primary text-white border-primary shadow-sm" 
-                          : "text-slate-400 border-slate-800 hover:bg-slate-900"
-                      )}
-                    >
-                      خادم الخصوصية (No-Cookie)
-                    </button>
-                    <button
-                      onClick={() => setPlayerServer('standard')}
-                      className={cn(
-                        "text-[10px] sm:text-xs px-3 py-1.5 rounded-lg border font-bold transition-all",
-                        playerServer === 'standard' 
-                          ? "bg-red-600 text-white border-red-600 shadow-sm" 
-                          : "text-slate-400 border-slate-800 hover:bg-slate-900"
-                      )}
-                    >
-                      خادم مباشر (Standard)
-                    </button>
-                  </div>
-                  <span className="text-slate-500 text-[10px] font-mono select-none hidden sm:inline">
-                    NATQI PRO-PLAYER v2.2
-                  </span>
-                </div>
-
-                {/* Video Stage with Resize Handling & Fallback support */}
-                <div className="flex-1 min-h-[220px] aspect-video lg:aspect-auto lg:h-[45vh] bg-slate-900/60 rounded-2xl overflow-hidden shadow-inner border border-slate-800/80 relative">
-                  <iframe 
-                    src={(() => {
-                      const vId = getYoutubeId(selectedVideo);
-                      if (vId) {
-                        return playerServer === 'standard' 
-                          ? `https://www.youtube.com/embed/${vId}` 
-                          : `https://www.youtube-nocookie.com/embed/${vId}`;
-                      }
-                      return selectedVideo;
-                    })()}
-                    className="w-full h-full" 
-                    allowFullScreen
-                    referrerPolicy="no-referrer-when-downgrade"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  />
-                </div>
-
-                {/* Helpful Diagnostics Warning Panel */}
-                <div className="mt-4 p-4 bg-slate-900/50 rounded-2xl border border-slate-800/40 space-y-3">
-                  <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
-                    <div className="space-y-1 text-center sm:text-right">
-                      <p className="text-white text-xs sm:text-sm font-bold flex items-center gap-1">
-                        <span>💡</span>
-                        تنبيه الخصوصية والتشغيل التلقائي
-                      </p>
-                      <p className="text-slate-400 text-[11px] leading-relaxed max-w-lg">
-                        إذا لم يعمل البث بسبب مانع الإعلانات أو حظر الإطارات المتداخلة بالمتصفح، يمكنك تبديل السيرفر في الأعلى، أو الفتح خارجياً:
-                      </p>
-                    </div>
-                    <a 
-                      href={selectedVideo ? selectedVideo.replace('youtube-nocookie.com', 'youtube.com').replace('/embed/', '/watch?v=') : '#'}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-5 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition-all shadow-lg shadow-red-600/30 active:scale-95 select-none whitespace-nowrap"
-                    >
-                      <ExternalLink size={13} /> شاهد على يوتيوب مباشرة ↗
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              {/* Left Side: Study Desk / Interactive Sidebar (35% width) */}
-              <div className="w-full lg:w-[380px] bg-slate-900/40 flex flex-col p-6 overflow-y-auto">
-                {selectedItem ? (
-                  <div className="space-y-6 flex-1 flex flex-col justify-between">
-                    <div>
-                      {/* Lesson title description */}
-                      <div className="space-y-2">
-                        <span className="px-2.5 py-1 bg-primary/20 text-primary border border-primary/30 rounded-lg text-[10px] font-black uppercase inline-block">
-                          {selectedItem.category === 'children' && 'فئة الأطفال 🧒'}
-                          {selectedItem.category === 'students' && 'فئة الطلاب 🎓'}
-                          {selectedItem.category === 'adults' && 'فئة البالغين 👤'}
-                          {selectedItem.category === 'non-native' && 'الناطقين لغير العربية 🌐'}
-                          {!['children', 'students', 'adults', 'non-native'].includes(selectedItem.category) && selectedItem.category}
-                        </span>
-                        <h3 className="text-lg font-bold text-white tracking-tight leading-snug">
-                          {selectedItem.title}
-                        </h3>
-                        <p className="text-slate-400 text-xs leading-relaxed">
-                          {selectedItem.description}
-                        </p>
-                      </div>
-
-                      {/* Lesson metadata block from database */}
-                      <div className="border-t border-slate-800/80 pt-5 mt-5 space-y-4">
-                        <h4 className="text-xs font-black tracking-wider text-slate-500 uppercase">
-                          منهج الدرس والنقاط التجويدية:
-                        </h4>
-
-                        {(() => {
-                          const vId = getYoutubeId(selectedVideo);
-                          const details = vId ? LESSON_DETAILS[vId] : null;
-
-                          return (
-                            <div className="space-y-4">
-                              {/* Meta Indicators */}
-                              <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-400 font-bold bg-slate-950/80 p-3 rounded-xl border border-slate-800/60">
-                                <div className="space-y-0.5">
-                                  <span className="text-slate-500 block text-[9px] font-medium uppercase font-sans">زمن الشرح:</span>
-                                  <span>⏱️ {details?.duration || "15:00 دقيقة"}</span>
-                                </div>
-                                <div className="space-y-0.5">
-                                  <span className="text-slate-500 block text-[9px] font-medium uppercase font-sans">المعلم الشارح:</span>
-                                  <span>👤 {details?.sourceTeacher || "المدرس التعليمي"}</span>
-                                </div>
-                              </div>
-
-                              {/* Target Articulation Points */}
-                              <div className="space-y-2">
-                                <span className="text-xs font-bold text-primary flex items-center gap-1">
-                                  <span>📍</span> مخارج الصوت المستهدفة:
-                                </span>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {(details?.makharij || ["مخارج الحروف الأساسية", "المخارج المقدرة والصفات", "التلقين السمعي"]).map((m, i) => (
-                                    <span key={i} className="px-2 py-1 bg-slate-800/60 text-slate-300 rounded-lg text-[10px] border border-slate-700/30">
-                                      {m}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-
-                              {/* Study tips */}
-                              <div className="space-y-2">
-                                <span className="text-xs font-bold text-sky-400 flex items-center gap-1">
-                                  <span>💡</span> نصائح هامة للتطبيق والتدوين:
-                                </span>
-                                <ul className="space-y-1.5 text-slate-300 text-xs list-disc pl-0 pr-1 mr-3 leading-relaxed">
-                                  {(details?.tips || [
-                                    "راقب تكرار نطق الحرف من فم الشيخ بشكل دقيق جداً لمعرفة الموضع.",
-                                    "قم بغلق عينيك بين الفترة والأخرى لزيادة قدرتك على التمييز السمعي.",
-                                    "بعد إتمام المشاهدة، افتح ركن التدريب لتقييم أدائك عبر الذكاء الاصطناعي."
-                                  ]).map((tip, i) => (
-                                    <li key={i}>{tip}</li>
-                                  ))}
-                                </ul>
-                              </div>
-
-                              {/* Interactive Call to Action to dynamic training */}
-                              <div className="pt-4 border-t border-slate-800/50">
-                                <p className="text-slate-400 text-[10px] leading-relaxed mb-3">
-                                  هل ترغب في تقييم صحة نطقك لهذه الحروف وتعرف نقاط ضعفك من خلال المدرب الصوتي الذكي؟
-                                </p>
-                                <button
-                                  onClick={() => {
-                                    // Close modal completely
-                                    setSelectedVideo(null);
-                                    setSelectedItem(null);
-                                    // Navigate to speech training screen
-                                    navigate('/training');
-                                  }}
-                                  className="w-full py-3 bg-gradient-to-r from-primary to-blue-600 hover:scale-103 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2"
-                                >
-                                  🎙️ ابدأ التدريب وتصحيح نطقك الآن
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })()}
+      {/* Items Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[1,2,3,4].map(i => <div key={i} className="h-40 bg-slate-200 animate-pulse rounded-3xl" />)}
+        </div>
+      ) : filteredItems.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-3xl border border-violet-50">
+          <div className="text-slate-300 flex justify-center mb-4"><Inbox size={48} /></div>
+          <p className="text-slate-500 font-bold">لا توجد مواد متاحة حالياً</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {filteredItems.map((item, idx) => (
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.06 }}
+              className="bg-white rounded-3xl border border-violet-50 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all overflow-hidden group"
+            >
+              {/* Thumbnail / Type indicator */}
+              {item.thumbnail ? (
+                <div 
+                  className="aspect-video relative overflow-hidden cursor-pointer"
+                  onClick={() => {
+                    if ((item.file_type || item.type) === 'video') {
+                      setSelectedVideo(item.file_url || item.url);
+                      setSelectedItem(item);
+                    }
+                  }}
+                >
+                  <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" referrerPolicy="no-referrer" />
+                  {(item.file_type || item.type) === 'video' && (
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/40">
+                        <Play size={24} className="text-white fill-white translate-x-[2px]" />
                       </div>
                     </div>
+                  )}
+                </div>
+              ) : (
+                <div className="h-2 natqi-gradient" />
+              )}
 
-                    <div className="text-center pt-4 border-t border-slate-800/40 mt-6">
-                      <p className="text-[10px] text-slate-600 font-mono select-none">
-                        Natqi Pronunciation Suite &bull; Google Cloud Run
-                      </p>
-                    </div>
+              <div className="p-5">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center shrink-0 border border-slate-100 shadow-sm transition-colors group-hover:bg-violet-50 group-hover:border-violet-100">
+                    {(item.file_type || item.type) === 'video' ? (
+                      <Video size={20} className="text-violet-600" />
+                    ) : (item.file_type || item.type) === 'audio' ? (
+                      <Music size={20} className="text-sky-600" />
+                    ) : (
+                      <FileText size={20} className="text-emerald-600" />
+                    )}
                   </div>
+                  <div className="text-right flex-1">
+                    <span className="text-[10px] font-black text-violet-500 uppercase tracking-wide">
+                      {item.category === 'children' ? 'للأطفال' : item.category === 'students' ? 'للطلبة' : item.category === 'adults' ? 'للبالغين' : item.category === 'non-native' ? 'لغير الناطقين' : (item.category || item.file_type || item.type)}
+                    </span>
+                    <h4 className="text-slate-800 font-black text-sm leading-snug">{item.title}</h4>
+                  </div>
+                  {user?.role === 'admin' && (
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={(e) => { e.stopPropagation(); setEditFormData(item); setIsEditing(true); }} className="p-1.5 bg-slate-100 text-slate-500 rounded-lg hover:bg-violet-100 hover:text-violet-700 transition-all"><Edit3 size={14} /></button>
+                      <button onClick={(e) => { e.stopPropagation(); handleAdminDelete(item.id); }} className="p-1.5 bg-slate-100 text-slate-500 rounded-lg hover:bg-red-100 hover:text-red-700 transition-all"><Trash2 size={14} /></button>
+                    </div>
+                  )}
+                </div>
+
+                {item.description && (
+                  <p className="text-slate-500 text-xs leading-relaxed mb-3 line-clamp-2 text-right">{item.description}</p>
+                )}
+
+                {(item.file_type || item.type) === 'video' ? (
+                  <button
+                    onClick={() => { setSelectedVideo(item.file_url || item.url); setSelectedItem(item); }}
+                    className="w-full py-2.5 natqi-gradient text-white rounded-xl font-bold text-sm hover:brightness-110 transition-all flex items-center justify-center gap-1.5 shadow"
+                  >
+                    <Play size={12} fill="currentColor" />
+                    <span>مشاهدة الفيديو</span>
+                  </button>
                 ) : (
-                  <div className="flex items-center justify-center h-full text-center text-slate-500 text-xs">
-                    يرجى تحديد فيديو دراسي للبدء...
-                  </div>
+                  <a
+                    href={item.file_url || item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2.5 bg-violet-50 text-violet-700 rounded-xl font-bold text-sm hover:bg-violet-100 transition-all flex items-center justify-center gap-2 border border-violet-100"
+                  >
+                    <ExternalLink size={14} /> فتح / تحميل
+                  </a>
                 )}
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {/* Video Modal - keep internal content stable during exit transitions */}
+      <AnimatePresence>
+        {selectedVideo && (
+          <VideoPlayerModal 
+            video={selectedVideo} 
+            item={selectedItem} 
+            onClose={() => { setSelectedVideo(null); setSelectedItem(null); }} 
+          />
         )}
       </AnimatePresence>
 
+      {/* Admin Edit Modal - keep all existing form logic, update container styling only */}
       <AnimatePresence>
         {isEditing && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4"
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
           >
-            <motion.div 
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
+              className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto"
               dir="rtl"
             >
-              <div className="p-6 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white z-10">
-                <h3 className="text-xl font-bold text-slate-800">
-                  {editFormData.id ? 'إدارة المادة - تعديل' : 'إضافة مادة جديدة (أدمن)'}
-                </h3>
-                <button 
-                  onClick={() => setIsEditing(false)}
-                  className="p-2 hover:bg-slate-100 rounded-full transition-all"
-                >
-                  <X size={20} className="text-slate-500" />
-                </button>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-black text-slate-800">{editFormData.id ? 'تعديل المادة' : 'إضافة مادة جديدة'}</h3>
+                <button onClick={() => setIsEditing(false)} className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center hover:bg-slate-200">✕</button>
               </div>
-
-              <form onSubmit={handleAdminSave} className="p-6 space-y-5">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-700">العنوان:</label>
-                  <input 
-                    type="text" 
-                    required 
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+              <form onSubmit={handleAdminSave} className="space-y-4 text-right">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">العنوان:</label>
+                  <input
+                    required
+                    className="w-full px-4 py-3 rounded-xl border-2 border-violet-100 focus:border-violet-400 outline-none transition-all"
                     value={editFormData.title || ''}
                     onChange={e => setEditFormData({...editFormData, title: e.target.value})}
                   />
                 </div>
-                
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-700">التصنيف والفئة العمرية:</label>
-                  <select 
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">التصنيف والفئة العمرية:</label>
+                  <select
                     required
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-violet-100 focus:border-violet-400 outline-none transition-all bg-white"
                     value={editFormData.category || ''}
                     onChange={e => setEditFormData({...editFormData, category: e.target.value})}
                   >
@@ -2402,12 +2414,11 @@ const Library = () => {
                     <option value="non-native">الناطقين بغيرها</option>
                   </select>
                 </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-700">نوع المادة:</label>
-                  <select 
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">نوع المادة:</label>
+                  <select
                     required
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-violet-100 focus:border-violet-400 outline-none transition-all bg-white"
                     value={editFormData.type || ''}
                     onChange={e => setEditFormData({...editFormData, type: e.target.value})}
                   >
@@ -2416,53 +2427,37 @@ const Library = () => {
                     <option value="pdf">كتاب أو ملزمة (PDF) رابـط</option>
                   </select>
                 </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-700">الرابط (ارفق رابط اليوتيوب العادي أو رابط الـ PDF):</label>
-                  <input 
-                    type="url" 
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">الرابط:</label>
+                  <input
                     required dir="ltr"
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none text-left"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-violet-100 focus:border-violet-400 outline-none transition-all text-left"
                     value={editFormData.url || ''}
                     onChange={e => setEditFormData({...editFormData, url: e.target.value})}
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-700">الوصف التحليلي:</label>
-                  <textarea 
-                    required 
-                    rows={3}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">الوصف التحليلي:</label>
+                  <textarea
+                    required rows={3}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-violet-100 focus:border-violet-400 outline-none transition-all"
                     value={editFormData.description || ''}
                     onChange={e => setEditFormData({...editFormData, description: e.target.value})}
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-700">رابط الصورة المصغرة (Thumbnail URL):</label>
-                  <input 
-                    type="url" 
-                    required dir="ltr"
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none text-left"
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">رابط الصورة المصغرة (Thumbnail URL):</label>
+                  <input
+                    dir="ltr"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-violet-100 focus:border-violet-400 outline-none transition-all text-left"
                     value={editFormData.thumbnail || ''}
                     onChange={e => setEditFormData({...editFormData, thumbnail: e.target.value})}
                   />
                 </div>
-
-                <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
-                  <button 
-                    type="button"
-                    onClick={() => setIsEditing(false)}
-                    className="px-5 py-2.5 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold transition-all text-sm"
-                  >
-                    إلغاء
-                  </button>
-                  <button 
-                    type="submit"
-                    className="px-8 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold shadow-lg shadow-slate-800/20 active:scale-95 transition-all text-sm"
-                  >
-                    حفظ التغييرات للمنصة
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setIsEditing(false)} className="flex-1 py-3 border-2 border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50">إلغاء</button>
+                  <button type="submit" disabled={adminSaving} className="flex-1 py-3 natqi-gradient text-white rounded-xl font-black disabled:opacity-60">
+                    {adminSaving ? 'جارٍ الحفظ...' : 'حفظ'}
                   </button>
                 </div>
               </form>
@@ -2470,7 +2465,8 @@ const Library = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </main>
+  </div>
   );
 };
 
@@ -2538,87 +2534,111 @@ const Sessions = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50/50">
+    <div className="min-h-screen flex flex-col bg-slate-50" dir="rtl">
       <Navbar />
-      <main className="flex-1 max-w-4xl mx-auto w-full p-4 md:p-8 space-y-8">
-        <header className="space-y-2">
-          <h2 className="text-3xl font-black text-slate-800">الجلسات المباشرة</h2>
-          <p className="text-slate-500 font-medium">احجز جلسة مع مدرب متخصص لتحسين نطقك بشكل مباشر</p>
-        </header>
+      <main className="flex-1 max-w-4xl mx-auto w-full px-4 pt-6 pb-28 md:pb-8 space-y-5">
+
+        {/* Header */}
+        <div className="natqi-gradient rounded-3xl p-6 relative overflow-hidden shadow-xl shadow-violet-400/25">
+          <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-white/8 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative z-10 flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-black text-white">الجلسات المباشرة</h2>
+              <p className="text-white/70 text-sm mt-1">احجز جلسة مع مدرب متخصص لتصحيح نطقك ومخارج الحروف بشكل مباشر</p>
+            </div>
+            <div className="w-12 h-12 glass-card rounded-2xl flex items-center justify-center text-white/95 shadow-inner">
+              <Users size={24} />
+            </div>
+          </div>
+        </div>
 
         {loading ? (
-          <div className="space-y-6 flex flex-col pt-8">
-            <div className="flex items-center justify-center gap-3 text-slate-400 font-bold mb-6">
-               <div className="w-5 h-5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></div>
-               جارٍ التحميل...
+          <div className="grid grid-cols-1 gap-4">
+            <div className="flex items-center justify-center gap-3 text-slate-400 font-bold py-12">
+               <div className="w-5 h-5 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin"></div>
+               جارٍ تحميل الجلسات التدريبية المتاحة...
             </div>
             {[1,2].map(i => <div key={i} className="h-40 bg-slate-200 animate-pulse rounded-3xl" />)}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 gap-4">
             {sessions.map((session, idx) => (
               <motion.div
                 key={session.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col md:flex-row items-center gap-8 group hover:shadow-xl transition-all"
+                transition={{ delay: idx * 0.06 }}
+                className="bg-white rounded-3xl border border-violet-50 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all overflow-hidden group flex flex-col md:flex-row items-center p-6 gap-6"
               >
-                <div className="w-24 h-24 bg-slate-50 rounded-3xl flex items-center justify-center text-4xl shadow-inner shrink-0">
-                  👨‍🏫
+                <div className="w-20 h-20 bg-slate-50 border border-slate-100 text-violet-600 rounded-2xl flex items-center justify-center shrink-0 shadow-inner">
+                  <UserCheck size={36} />
                 </div>
 
-                <div className="flex-1 text-center md:text-right space-y-4">
+                <div className="flex-1 text-center md:text-right space-y-3">
                   <div className="flex flex-wrap justify-center md:justify-start gap-2">
-                     <span className={cn(
-                       "px-3 py-1 rounded-full text-xs font-black",
-                       session.remaining > 0 ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
-                     )}>
-                       {session.remaining > 0 ? 'متاح' : 'ممتلئ'}
-                     </span>
-                     <span className="px-3 py-1 bg-slate-50 text-slate-500 rounded-full text-xs font-bold font-mono uppercase tracking-tighter">
-                       {session.category}
-                     </span>
+                    <span className={cn(
+                      "px-2.5 py-1 rounded-lg text-xs font-black flex items-center gap-1",
+                      session.remaining > 0 ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
+                    )}>
+                      <span>{session.remaining > 0 ? 'متاح للجلسة' : 'ممتلئ تماماً'}</span>
+                      {session.remaining > 0 ? <CheckCircle2 size={12} className="shrink-0" /> : <Lock size={12} className="shrink-0" />}
+                    </span>
+                    <span className="px-2.5 py-1 bg-violet-50 text-violet-600 rounded-lg text-xs font-black flex items-center gap-1">
+                      {session.category === 'children' && (
+                        <span className="flex items-center gap-1 font-black">فئة الأطفال <Baby size={12} className="shrink-0" /></span>
+                      )}
+                      {session.category === 'students' && (
+                        <span className="flex items-center gap-1 font-black">فئة الطلاب <GraduationCap size={12} className="shrink-0" /></span>
+                      )}
+                      {session.category === 'adults' && (
+                        <span className="flex items-center gap-1 font-black">فئة البالغين <User size={12} className="shrink-0" /></span>
+                      )}
+                      {session.category === 'non-native' && (
+                        <span className="flex items-center gap-1 font-black">الناطقين لغير العربية <Globe size={12} className="shrink-0" /></span>
+                      )}
+                      {!['children', 'students', 'adults', 'non-native'].includes(session.category) && <span>{session.category}</span>}
+                    </span>
                   </div>
 
-                  <h3 className="text-2xl font-bold text-slate-800">{session.title}</h3>
+                  <h3 className="text-xl font-black text-slate-800 leading-snug">{session.title}</h3>
                   
-                  <div className="flex flex-wrap justify-center md:justify-start gap-6 text-slate-500 font-medium">
-                    <div className="flex items-center gap-2">
-                      <User size={18} className="text-primary" />
-                      <span>{session.instructor}</span>
+                  <div className="flex flex-wrap justify-center md:justify-start gap-3 text-slate-500 font-bold text-xs">
+                    <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl">
+                      <User size={14} className="text-violet-500" />
+                      <span>المدرب: {session.instructor}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar size={18} className="text-primary" />
-                      <span className="text-sm">{formatDate(session.datetime)}</span>
+                    <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl">
+                      <Calendar size={14} className="text-violet-500" />
+                      <span>{formatDate(session.datetime)}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Users size={18} className="text-primary" />
-                      <span className="text-sm">متبقي {session.remaining} مقاعد</span>
+                    <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl">
+                      <Users size={14} className="text-violet-500" />
+                      <span>متبقي {session.remaining} مقاعد</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="w-full md:w-auto">
+                <div className="w-full md:w-auto shrink-0">
                   <button 
                     onClick={() => handleBook(session.id)}
                     disabled={session.remaining <= 0 || bookingLoading === session.id}
                     className={cn(
-                      "w-full md:w-40 py-4 rounded-2xl font-black text-lg shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:scale-100",
-                      session.remaining > 0 ? "bg-primary text-white shadow-primary/30 hover:scale-105" : "bg-slate-100 text-slate-400 cursor-not-allowed shadow-none"
+                      "w-full md:w-40 py-3 rounded-2xl font-black text-sm shadow-md transition-all active:scale-[0.98] disabled:opacity-50 disabled:scale-100",
+                      session.remaining > 0 ? "natqi-gradient text-white shadow-violet-200 hover:brightness-110" : "bg-slate-100 text-slate-400 cursor-not-allowed shadow-none"
                     )}
                   >
                     {bookingLoading === session.id ? (
-                      <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
-                    ) : session.remaining > 0 ? 'حجز مقعد' : 'ممتلئ'}
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
+                    ) : session.remaining > 0 ? 'حجز مقعد الآن' : 'مكتمل'}
                   </button>
                 </div>
               </motion.div>
             ))}
 
             {sessions.length === 0 && (
-              <div className="text-center py-20 bg-white rounded-[3rem] border border-slate-100 shadow-sm text-slate-400 font-bold">
-                لا توجد جلسات مجدولة حالياً، يرجى المحاولة لاحقاً
+              <div className="text-center py-16 bg-white rounded-3xl border border-violet-50">
+                <div className="text-slate-350 flex justify-center mb-4"><Calendar size={48} /></div>
+                <p className="text-slate-500 font-bold">لا توجد جلسات مباشرة مجدولة حالياً</p>
               </div>
             )}
           </div>
@@ -2630,22 +2650,22 @@ const Sessions = () => {
         {showSuccessModal && (
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
           >
             <motion.div 
               initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
-              className="bg-white p-8 md:p-12 rounded-[3rem] shadow-2xl max-w-sm w-full text-center space-y-6"
+              className="bg-white p-6 md:p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center space-y-4"
             >
-              <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-4">
-                ✅
+              <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-2 shadow-inner">
+                <CheckCircle2 size={32} />
               </div>
-              <h3 className="text-2xl font-black text-slate-800">تم الحجز بنجاح!</h3>
-              <p className="text-slate-500 font-medium leading-relaxed">
+              <h3 className="text-xl font-black text-slate-800 font-sans">تم الحجز بنجاح!</h3>
+              <p className="text-slate-500 text-sm leading-relaxed">
                 سيصلك رابط الانضمام للجلسة عبر البريد الإلكتروني قبل الموعد بـ 15 دقيقة.
               </p>
               <button 
                 onClick={() => setShowSuccessModal(false)}
-                className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-black transition-all"
+                className="w-full py-3 natqi-gradient text-white rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-violet-200"
               >
                 رائع، شكراً
               </button>
@@ -2714,7 +2734,7 @@ const SettingsPage = () => {
       const data = await res.json();
       if (res.ok) {
         updateProfile(data);
-        setSuccessMsg('✅ تم تحديث الملف الشخصي بنجاح');
+        setSuccessMsg('تم تحديث الملف الشخصي بنجاح');
         setProfileData(prev => ({ ...prev, currentPassword: '', newPassword: '', confirmPassword: '' }));
       } else {
         setErrorMsg(data.error || 'حدث خطأ أثناء التحديث');
@@ -2743,7 +2763,7 @@ const SettingsPage = () => {
       const data = await res.json();
       if (res.ok) {
         updateProfile(data);
-        setSuccessMsg('✅ تم حفظ الإعدادات بنجاح');
+        setSuccessMsg('تم حفظ الإعدادات بنجاح');
       } else {
         setErrorMsg(data.error || 'حدث خطأ أثناء حفظ الإعدادات');
       }
@@ -2801,37 +2821,45 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50/50">
+    <div className="min-h-screen flex flex-col bg-slate-50" dir="rtl">
       <Navbar />
-      <main className="flex-1 max-w-4xl mx-auto w-full p-4 md:p-8 space-y-8">
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-8">
-          <div className="space-y-1">
-            <h2 className="text-3xl font-black text-slate-800 tracking-tight">الإعدادات</h2>
-            <p className="text-slate-500 font-medium">إدارة حسابك وتفضيلات التطبيق</p>
-          </div>
-          <button 
-            onClick={() => logout()}
-            className="flex items-center gap-2 px-4 py-2 text-red-500 font-bold hover:bg-red-50 rounded-xl transition-all w-fit"
-          >
-            <LogOut size={20} /> تسجيل الخروج
-          </button>
-        </header>
+      <main className="flex-1 max-w-4xl mx-auto w-full px-4 pt-6 pb-28 md:pb-8 space-y-5">
 
-        <div className="flex bg-white p-1.5 rounded-[1.5rem] border border-slate-100 shadow-sm max-w-md">
+        {/* Header */}
+        <div className="natqi-gradient rounded-3xl p-6 relative overflow-hidden shadow-xl shadow-violet-400/25">
+          <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-white/8 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative z-10 flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-black text-white">إعدادات المنصة</h2>
+              <p className="text-white/70 text-sm mt-1">تخصيص ملفك الشخصي وإعدادات الصوت وهدف التعلم</p>
+            </div>
+            <button 
+              onClick={() => logout()}
+              className="px-4 py-2.5 bg-white/10 hover:bg-white/20 hover:text-white text-white/90 border border-white/25 rounded-2xl font-bold text-sm transition-all flex items-center gap-2"
+            >
+              <LogOut size={16} /> تسجيل الخروج
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Buttons */}
+        <div className="flex bg-white p-1.5 rounded-2xl border border-violet-100 shadow-sm max-w-md">
           <button 
+            type="button"
             onClick={() => setActiveTab('profile')}
             className={cn(
-              "flex-1 py-3 rounded-2xl font-bold transition-all",
-              activeTab === 'profile' ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-slate-500 hover:bg-slate-50"
+              "flex-1 py-2.5 rounded-xl font-black text-sm transition-all",
+              activeTab === 'profile' ? "natqi-gradient text-white shadow-md shadow-violet-200" : "text-slate-500 hover:bg-slate-50"
             )}
           >
             الملف الشخصي
           </button>
           <button 
+            type="button"
             onClick={() => setActiveTab('preferences')}
             className={cn(
-              "flex-1 py-3 rounded-2xl font-bold transition-all",
-              activeTab === 'preferences' ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-slate-500 hover:bg-slate-50"
+              "flex-1 py-2.5 rounded-xl font-black text-sm transition-all",
+              activeTab === 'preferences' ? "natqi-gradient text-white shadow-md shadow-violet-200" : "text-slate-500 hover:bg-slate-50"
             )}
           >
             تفضيلات التطبيق
@@ -2843,187 +2871,194 @@ const SettingsPage = () => {
           {activeTab === 'profile' ? (
             <motion.div 
               key="profile"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="bg-white p-6 md:p-10 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-8"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              className="bg-white p-6 md:p-8 rounded-3xl border border-violet-100 shadow-sm space-y-6 text-right"
             >
-              <form onSubmit={handleProfileSave} className="space-y-8">
-                <section className="space-y-6">
-                   <div className="flex items-center gap-2 text-slate-400 font-bold text-xs uppercase tracking-widest border-b border-slate-50 pb-2">
-                     <User size={14} /> المعلومات الأساسية
-                   </div>
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-sm font-bold text-slate-700 block pr-2">الاسم الكامل</label>
-                        <input 
-                          type="text" 
-                          className="w-full px-5 py-4 bg-slate-50 border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-primary outline-none transition-all font-medium"
-                          value={profileData.name}
-                          onChange={e => setProfileData({...profileData, name: e.target.value})}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-bold text-slate-700 block pr-2">البريد الإلكتروني</label>
-                        <input 
-                          type="email" 
-                          className="w-full px-5 py-4 bg-slate-50 border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-primary outline-none transition-all font-medium"
-                          value={profileData.email}
-                          onChange={e => setProfileData({...profileData, email: e.target.value})}
-                        />
-                      </div>
-                   </div>
+              <form onSubmit={handleProfileSave} className="space-y-6">
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 text-violet-500 font-black text-sm border-b border-slate-100 pb-2">
+                    <User size={18} /> المعلومات الأساسية
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">الاسم الكامل</label>
+                      <input 
+                        type="text" 
+                        required
+                        className="w-full px-4 py-3 rounded-xl border border-violet-100 focus:border-violet-400 focus:ring-1 focus:ring-violet-400 outline-none transition-all bg-white"
+                        value={profileData.name}
+                        onChange={e => setProfileData({...profileData, name: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">البريد الإلكتروني</label>
+                      <input 
+                        type="email" 
+                        required
+                        className="w-full px-4 py-3 rounded-xl border border-violet-100 focus:border-violet-400 focus:ring-1 focus:ring-violet-400 outline-none transition-all bg-white"
+                        value={profileData.email}
+                        onChange={e => setProfileData({...profileData, email: e.target.value})}
+                      />
+                    </div>
+                  </div>
                 </section>
 
-                <section className="space-y-6">
-                   <div className="flex items-center gap-2 text-slate-400 font-bold text-xs uppercase tracking-widest border-b border-slate-50 pb-2">
-                     <Lock size={14} /> تغيير كلمة المرور
-                   </div>
-                   <div className="space-y-6">
-                      <div className="space-y-2">
-                        <label className="text-sm font-bold text-slate-700 block pr-2">كلمة المرور الحالية</label>
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 text-violet-500 font-black text-sm border-b border-slate-100 pb-2">
+                    <Lock size={18} /> تغيير كلمة المرور
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">كلمة المرور الحالية</label>
+                      <input 
+                        type="password" 
+                        placeholder="اتركها فارغة إذا لم ترد التغيير"
+                        className="w-full px-4 py-3 rounded-xl border border-violet-100 focus:border-violet-400 focus:ring-1 focus:ring-violet-400 outline-none transition-all bg-white text-right placeholder:text-slate-400 placeholder:text-xs"
+                        value={profileData.currentPassword}
+                        onChange={e => setProfileData({...profileData, currentPassword: e.target.value})}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">كلمة المرور الجديدة</label>
                         <input 
                           type="password" 
-                          placeholder="اتركها فارغة إذا لم ترد التغيير"
-                          className="w-full px-5 py-4 bg-slate-50 border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-primary outline-none transition-all font-medium"
-                          value={profileData.currentPassword}
-                          onChange={e => setProfileData({...profileData, currentPassword: e.target.value})}
+                          className="w-full px-4 py-3 rounded-xl border border-violet-100 focus:border-violet-400 focus:ring-1 focus:ring-violet-400 outline-none transition-all bg-white text-right"
+                          value={profileData.newPassword}
+                          onChange={e => setProfileData({...profileData, newPassword: e.target.value})}
                         />
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <label className="text-sm font-bold text-slate-700 block pr-2">كلمة المرور الجديدة</label>
-                          <input 
-                            type="password" 
-                            className="w-full px-5 py-4 bg-slate-50 border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-primary outline-none transition-all font-medium"
-                            value={profileData.newPassword}
-                            onChange={e => setProfileData({...profileData, newPassword: e.target.value})}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-bold text-slate-700 block pr-2">تأكيد كلمة المرور الجديدة</label>
-                          <input 
-                            type="password" 
-                            className="w-full px-5 py-4 bg-slate-50 border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-primary outline-none transition-all font-medium"
-                            value={profileData.confirmPassword}
-                            onChange={e => setProfileData({...profileData, confirmPassword: e.target.value})}
-                          />
-                        </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">تأكيد كلمة المرور الجديدة</label>
+                        <input 
+                          type="password" 
+                          className="w-full px-4 py-3 rounded-xl border border-violet-100 focus:border-violet-400 focus:ring-1 focus:ring-violet-400 outline-none transition-all bg-white text-right"
+                          value={profileData.confirmPassword}
+                          onChange={e => setProfileData({...profileData, confirmPassword: e.target.value})}
+                        />
                       </div>
-                   </div>
+                    </div>
+                  </div>
                 </section>
 
                 <button 
                   type="submit"
                   disabled={loading}
-                  className="w-full md:w-auto px-12 py-4 bg-slate-900 text-white rounded-2xl font-black text-lg shadow-xl shadow-slate-200 shadow-b hover:bg-black transition-all disabled:opacity-50 active:scale-95"
+                  className="w-full sm:w-auto px-10 py-3 natqi-gradient text-white rounded-xl font-black transition-all hover:brightness-110 disabled:opacity-50 active:scale-95 shadow-md shadow-violet-200"
                 >
-                  {loading ? 'جاري الحفظ...' : 'حفظ الملف الشخصي'}
+                  {loading ? 'جارٍ الحفظ...' : 'حفظ كافه التعديلات'}
                 </button>
               </form>
             </motion.div>
           ) : (
             <motion.div 
               key="preferences"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="bg-white p-6 md:p-10 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-10"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              className="bg-white p-6 md:p-8 rounded-3xl border border-violet-200 shadow-sm space-y-6 text-right"
             >
               {/* Language Pref */}
-              <div className="space-y-4">
-                <label className="text-lg font-black text-slate-800 pr-2">تفضيل اللغة</label>
+              <div className="space-y-3">
+                <label className="block text-sm font-black text-slate-800 pr-1">تفضيل اللغة</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                   <button 
+                  <button 
+                    type="button"
                     onClick={() => setSettingsData({...settingsData, language_pref: 'arabic_native'})}
                     className={cn(
-                      "p-6 rounded-3xl border-2 transition-all text-right flex items-center justify-between gap-4",
-                      settingsData.language_pref === 'arabic_native' ? "border-primary bg-primary/5" : "border-slate-50 hover:border-slate-200"
+                      "p-5 rounded-2xl border-2 transition-all text-right flex items-center justify-between gap-4",
+                      settingsData.language_pref === 'arabic_native' ? "border-violet-400 bg-violet-50/50" : "border-slate-100 hover:border-violet-200"
                     )}
-                   >
-                     <div className="space-y-1">
-                        <p className="font-bold text-slate-800">عربي (ناطق أصلي)</p>
-                        <p className="text-xs text-slate-400">للذين لغتهم الأم هي العربية ويريدون تحسين نطقهم</p>
-                     </div>
-                     <Globe className={cn(settingsData.language_pref === 'arabic_native' ? "text-primary" : "text-slate-200")} />
-                   </button>
-                   <button 
+                  >
+                    <div className="space-y-1">
+                      <p className="font-bold text-slate-800 text-sm">عربي (ناطق أصلي)</p>
+                      <p className="text-xs text-slate-400">للذين لغتهم الأم هي العربية ويريدون تحسين نطقهم</p>
+                    </div>
+                    <Globe className={cn("shrink-0", settingsData.language_pref === 'arabic_native' ? "text-violet-500" : "text-slate-200")} />
+                  </button>
+                  <button 
+                    type="button"
                     onClick={() => setSettingsData({...settingsData, language_pref: 'arabic_non_native'})}
                     className={cn(
-                       "p-6 rounded-3xl border-2 transition-all text-right flex items-center justify-between gap-4",
-                       settingsData.language_pref === 'arabic_non_native' ? "border-primary bg-primary/5" : "border-slate-50 hover:border-slate-200"
+                      "p-5 rounded-2xl border-2 transition-all text-right flex items-center justify-between gap-4",
+                      settingsData.language_pref === 'arabic_non_native' ? "border-violet-400 bg-violet-50/50" : "border-slate-100 hover:border-violet-200"
                     )}
-                   >
-                     <div className="space-y-1">
-                        <p className="font-bold text-slate-800">عربي لغير الناطقين</p>
-                        <p className="text-xs text-slate-400">لمتعلمي العربية كلغة ثانية من جميع أنحاء العالم</p>
-                     </div>
-                     <Globe className={cn(settingsData.language_pref === 'arabic_non_native' ? "text-primary" : "text-slate-200")} />
-                   </button>
+                  >
+                    <div className="space-y-1">
+                      <p className="font-bold text-slate-800 text-sm">عربي لغير الناطقين</p>
+                      <p className="text-xs text-slate-400">لمتعلمي العربية كلغة ثانية من جميع أنحاء العالم</p>
+                    </div>
+                    <Globe className={cn("shrink-0", settingsData.language_pref === 'arabic_non_native' ? "text-violet-500" : "text-slate-200")} />
+                  </button>
                 </div>
               </div>
 
               {/* Level Selector */}
-              <div className="space-y-4">
-                <label className="text-lg font-black text-slate-800 pr-2">مستوى النطق</label>
+              <div className="space-y-3">
+                <label className="block text-sm font-black text-slate-800 pr-1">مستوى النطق</label>
                 <div className="flex gap-2">
-                   {['beginner', 'intermediate', 'advanced'].map(lvl => (
-                     <button
-                       key={lvl}
-                       onClick={() => setSettingsData({...settingsData, level: lvl})}
-                       className={cn(
-                         "flex-1 py-4 rounded-2xl font-bold transition-all text-sm",
-                         settingsData.level === lvl ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-slate-50 text-slate-500 hover:bg-slate-100"
-                       )}
-                     >
-                       {lvl === 'beginner' ? 'مبتدئ' : lvl === 'intermediate' ? 'متوسط' : 'متقدم'}
-                     </button>
-                   ))}
+                  {['beginner', 'intermediate', 'advanced'].map(lvl => (
+                    <button
+                      key={lvl}
+                      type="button"
+                      onClick={() => setSettingsData({...settingsData, level: lvl})}
+                      className={cn(
+                        "flex-1 py-3 rounded-xl font-bold transition-all text-sm",
+                        settingsData.level === lvl ? "natqi-gradient text-white shadow-md shadow-violet-200" : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                      )}
+                    >
+                      {lvl === 'beginner' ? 'مبتدئ' : lvl === 'intermediate' ? 'متوسط' : 'متقدم'}
+                    </button>
+                  ))}
                 </div>
               </div>
 
               {/* Goal Selector */}
-              <div className="space-y-4">
-                <label className="text-lg font-black text-slate-800 pr-2">هدفي الأساسي</label>
+              <div className="space-y-3">
+                <label className="block text-sm font-black text-slate-800 pr-1">هدفي الأساسي</label>
                 <div className="flex flex-col sm:flex-row gap-2">
-                   {[
-                     { id: 'pronunciation', label: 'تصحيح النطق' },
-                     { id: 'letters', label: 'تعلم الحروف' },
-                     { id: 'fluency', label: 'تحسين الطلاقة' }
-                   ].map(goal => (
-                     <button
-                       key={goal.id}
-                       onClick={() => setSettingsData({...settingsData, goal: goal.id})}
-                       className={cn(
-                         "flex-1 py-4 rounded-2xl font-bold transition-all text-sm",
-                         settingsData.goal === goal.id ? "bg-slate-900 text-white shadow-xl" : "bg-slate-50 text-slate-500 hover:bg-slate-100"
-                       )}
-                     >
-                       {goal.label}
-                     </button>
-                   ))}
+                  {[
+                    { id: 'pronunciation', label: 'تصحيح ومتابعة النطق' },
+                    { id: 'letters', label: 'تعلم مخارج الحروف والصفات' },
+                    { id: 'fluency', label: 'تحسين الطلاقة والتلاوة' }
+                  ].map(goal => (
+                    <button
+                      key={goal.id}
+                      type="button"
+                      onClick={() => setSettingsData({...settingsData, goal: goal.id})}
+                      className={cn(
+                        "flex-1 py-3 rounded-xl font-bold transition-all text-sm",
+                        settingsData.goal === goal.id ? "bg-slate-800 text-white shadow-lg" : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                      )}
+                    >
+                      {goal.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
               {/* Category Selector (Syncs theme) */}
-              <div className="space-y-4">
-                <label className="text-lg font-black text-slate-800 pr-2">الفئة المستهدفة</label>
+              <div className="space-y-3">
+                <label className="block text-sm font-black text-slate-800 pr-1">الفئة المستهدفة</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                    {[
-                     { id: 'children', label: 'أطفال', color: 'bg-emerald-50 text-emerald-600' },
-                     { id: 'students', label: 'طلبة', color: 'bg-indigo-50 text-indigo-600' },
-                     { id: 'adults', label: 'بالغين', color: 'bg-amber-50 text-amber-600' },
-                     { id: 'non-native', label: 'أجانب', color: 'bg-rose-50 text-rose-600' }
+                     { id: 'children', label: 'الأطفال', color: 'bg-emerald-50 text-emerald-600' },
+                     { id: 'students', label: 'الطلبة', color: 'bg-indigo-50 text-indigo-600' },
+                     { id: 'adults', label: 'البالغين', color: 'bg-amber-50 text-amber-600' },
+                     { id: 'non-native', label: 'غير ناطقين بي العربية', color: 'bg-rose-50 text-rose-600' }
                    ].map(cat => (
                      <button
                        key={cat.id}
+                       type="button"
                        onClick={() => setSettingsData({...settingsData, category: cat.id as any})}
                        className={cn(
-                         "py-4 rounded-2xl font-bold transition-all text-sm border-2",
-                         settingsData.category === cat.id ? "border-primary bg-primary/5" : "border-transparent bg-slate-50 hover:bg-slate-100"
+                         "py-3 rounded-[1.25rem] font-bold transition-all text-sm border-2",
+                         settingsData.category === cat.id ? "border-violet-400 bg-violet-50/50" : "border-transparent bg-slate-50 hover:bg-slate-100"
                        )}
                      >
-                       <span className={cn("px-2 py-1 rounded-lg text-[10px] block mb-1 uppercase font-black", cat.color)}>{cat.id}</span>
+                       <span className={cn("px-2 py-0.5 rounded-md text-[10px] block mb-1 font-black", cat.color)}>{cat.id === 'children' ? 'أطفال' : cat.id === 'students' ? 'طلبة' : cat.id === 'adults' ? 'بالغين' : 'أجانب'}</span>
                        {cat.label}
                      </button>
                    ))}
@@ -3031,56 +3066,60 @@ const SettingsPage = () => {
               </div>
 
               {/* Mic Settings */}
-              <div className="space-y-6 pt-6 border-t border-slate-50">
-                 <div className="flex items-center justify-between">
-                    <label className="text-lg font-black text-slate-800 pr-2">حساسية الميكروفون</label>
-                    <span className="text-primary font-black text-xl">{settingsData.mic_sensitivity}%</span>
-                 </div>
-                 <input 
-                    type="range" min="0" max="100" 
-                    className="w-full h-3 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-primary"
-                    value={settingsData.mic_sensitivity}
-                    onChange={e => setSettingsData({...settingsData, mic_sensitivity: parseInt(e.target.value)})}
-                 />
+              <div className="space-y-4 pt-6 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-bold text-slate-700 pr-1">حساسية الميكروفون المعتمدة</label>
+                  <span className="text-violet-600 font-black text-lg">{settingsData.mic_sensitivity}%</span>
+                </div>
+                <input 
+                  type="range" min="0" max="100" 
+                  className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-violet-500"
+                  value={settingsData.mic_sensitivity}
+                  onChange={e => setSettingsData({...settingsData, mic_sensitivity: parseInt(e.target.value)})}
+                />
                  
                  <div className="flex flex-col md:flex-row items-center gap-4">
                     <button 
+                      type="button"
                       onClick={runMicTest}
                       disabled={isTesting}
-                      className="w-full md:w-auto px-8 py-4 bg-blue-50 text-blue-600 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-blue-100 transition-all disabled:opacity-50"
+                      className="w-full md:w-auto px-6 py-3 bg-violet-50 text-violet-600 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-violet-100 transition-all disabled:opacity-50"
                     >
-                      <Mic size={20} /> {isTesting ? 'جاري الاختبار...' : '🎤 اختبار الميكروفون'}
+                      <Mic size={18} /> {isTesting ? 'جاري الفحص السمعي...' : 'اختبار التقاط الميكروفون'}
                     </button>
                     
                     {isTesting && (
-                      <div className="flex-1 w-full bg-slate-100 h-10 rounded-xl overflow-hidden relative">
-                         <motion.div 
+                      <div className="flex-1 w-full bg-slate-100 h-8 rounded-lg overflow-hidden relative">
+                        <motion.div 
                           initial={{ width: 0 }}
                           animate={{ width: `${recordingLevel}%` }}
-                          className="h-full bg-blue-500 shadow-lg shadow-blue-500/50"
-                         />
+                          className="h-full bg-violet-500 shadow-lg shadow-violet-500/50"
+                        />
                       </div>
                     )}
 
                     {testResult && (
                       <div className={cn(
-                        "flex items-center gap-2 font-bold",
+                        "flex items-center gap-2 font-bold text-sm",
                         testResult === 'success' ? "text-emerald-500" : "text-red-500"
                       )}>
-                        {testResult === 'success' ? <CheckCircle2 size={24} /> : <XCircle size={24} />}
-                        {testResult === 'success' ? 'تم التقاط الصوت بنجاح' : 'لم يتم اكتشاف صوت، تحقق من الإعدادات'}
+                        {testResult === 'success' ? <CheckCircle2 size={18} /> : <XCircle size={18} />}
+                        {testResult === 'success' ? 'تم فحص الميكروفون بنجاح وثبات التقاط الصوت' : 'لم يتم اكتشاف صوت، من فضلك تحقق من سماح المتصفح'}
                       </div>
                     )}
                  </div>
               </div>
 
-              <button 
-                onClick={handleSettingsSave}
-                disabled={loading}
-                className="w-full md:w-fit px-16 py-5 bg-primary text-white rounded-3xl font-black text-xl shadow-2xl shadow-primary/30 hover:brightness-110 active:scale-95 transition-all"
-              >
-                {loading ? 'جاري الحفظ...' : 'حفظ التغييرات'}
-              </button>
+              <div className="pt-4">
+                <button 
+                  type="button"
+                  onClick={handleSettingsSave}
+                  disabled={loading}
+                  className="w-full md:w-auto px-10 py-3 natqi-gradient text-white rounded-xl font-black transition-all hover:brightness-110 disabled:opacity-50 active:scale-95 shadow-md shadow-violet-200"
+                >
+                  {loading ? 'جاري الحفظ...' : 'حفظ كافه التفضيلات التفضيلية'}
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -3092,8 +3131,9 @@ const SettingsPage = () => {
               initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }}
               className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] px-8 py-4 bg-emerald-500 text-white rounded-2xl font-bold shadow-2xl flex items-center gap-3"
             >
-              {successMsg}
-              <button onClick={() => setSuccessMsg('')} className="bg-white/20 p-1 rounded-full"><X size={14}/></button>
+              <CheckCircle2 size={18} className="shrink-0" />
+              <span>{successMsg}</span>
+              <button onClick={() => setSuccessMsg('')} className="bg-white/20 p-1 rounded-full hover:bg-white/30 transition-colors"><X size={14}/></button>
             </motion.div>
           )}
           {errorMsg && (
@@ -3101,8 +3141,9 @@ const SettingsPage = () => {
               initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }}
               className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] px-8 py-4 bg-red-500 text-white rounded-2xl font-bold shadow-2xl flex items-center gap-3"
             >
-              {errorMsg}
-              <button onClick={() => setErrorMsg('')} className="bg-white/20 p-1 rounded-full"><X size={14}/></button>
+              <AlertTriangle size={18} className="shrink-0" />
+              <span>{errorMsg}</span>
+              <button onClick={() => setErrorMsg('')} className="bg-white/20 p-1 rounded-full hover:bg-white/30 transition-colors"><X size={14}/></button>
             </motion.div>
           )}
         </AnimatePresence>

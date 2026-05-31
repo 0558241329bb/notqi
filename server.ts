@@ -49,19 +49,19 @@ const missingVars = requiredEnvVars.filter(v => {
 });
 
 if (isProd && missingVars.length > 0) {
-  console.error(`❌ Missing required environment variables: ${missingVars.join(', ')}`);
+  console.error(`Error: Missing required environment variables: ${missingVars.join(', ')}`);
   process.exit(1);
 }
 
 setLogLevel("error");
 
 const firebaseApp = initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp);
+const db = getFirestore(firebaseApp, fileFirebaseConfig.firestoreDatabaseId || undefined);
 
-const withTimeout = <T>(promise: Promise<T>, ms: number = 8000): Promise<T> => {
+const withTimeout = <T>(promise: Promise<T>, ms: number = 15000): Promise<T> => {
   return Promise.race([
     promise,
-    new Promise<T>((_, reject) => setTimeout(() => reject(new Error("Request Timeout: Server could not reach Firebase")), ms))
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error("Request Timeout: Server took too long to respond")), ms))
   ]);
 };
 
@@ -452,19 +452,20 @@ async function generateContentWithFallbackAndRetry(
     contents: any;
     config?: any;
   },
-  models: string[] = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"]
+  models: string[] = ["gemini-3.5-flash", "gemini-3.1-flash-lite"]
 ): Promise<any> {
   let lastError: any = null;
   
   for (const modelName of models) {
-    const attempts = 3; // Retry up to 3 times per model
+    const attempts = 2; // Reduced retries for performance
     for (let attempt = 1; attempt <= attempts; attempt++) {
       try {
         console.log(`Calling Gemini API via ${modelName} - attempt ${attempt}/${attempts}`);
-        const response = await ai.models.generateContent({
-          ...params,
+        const response = await withTimeout(ai.models.generateContent({
           model: modelName,
-        });
+          contents: params.contents,
+          config: params.config
+        }), 20000);
         return response;
       } catch (err: any) {
         lastError = err;
@@ -594,7 +595,7 @@ async function startServer() {
       };
 
       console.log("Signing JWT...");
-      const token = jwt.sign({ userId: docRef.id }, JWT_SECRET, { expiresIn: '7d' });
+      const token = jwt.sign({ userId: docRef.id, role: 'user' }, JWT_SECRET, { expiresIn: '7d' });
       console.log("Sending success response.");
       res.status(201).json({ token, user });
     } catch (error) {
@@ -657,7 +658,7 @@ async function startServer() {
         mic_sensitivity: userData.mic_sensitivity || 70,
       };
 
-      const token = jwt.sign({ userId: userDoc.id }, JWT_SECRET, { expiresIn: '7d' });
+      const token = jwt.sign({ userId: userDoc.id, role: userData.role }, JWT_SECRET, { expiresIn: '7d' });
       
       res.json({ token, user });
     } catch (error) {
@@ -1053,9 +1054,11 @@ async function startServer() {
 
   // Admin Library Routes
   app.post("/api/library", verifyToken, verifyAdmin, async (req, res) => {
+    console.log("POST /api/library received", req.body);
     try {
       const libraryRef = collection(db, "library_items");
-      const newDoc = await addDoc(libraryRef, req.body);
+      const newDoc = await withTimeout(addDoc(libraryRef, { ...req.body, createdAt: serverTimestamp() }));
+      console.log("Created doc:", newDoc.id);
       res.status(201).json({ id: newDoc.id, ...req.body });
     } catch (error) {
       console.error("CREATE LIB ERROR:", error);
@@ -1064,9 +1067,11 @@ async function startServer() {
   });
 
   app.put("/api/library/:id", verifyToken, verifyAdmin, async (req, res) => {
+    console.log("PUT /api/library/:id received", req.params.id, req.body);
     try {
       const itemRef = doc(db, "library_items", req.params.id);
-      await updateDoc(itemRef, req.body);
+      await withTimeout(updateDoc(itemRef, req.body));
+      console.log("Updated doc:", req.params.id);
       res.json({ id: req.params.id, ...req.body });
     } catch (error) {
       console.error("UPDATE LIB ERROR:", error);
@@ -1227,79 +1232,8 @@ async function startServer() {
       let analysisResult: { score: number; mistakes: any[]; feedback: string; isAi?: boolean } | null = null;
       let usedFallback = false;
 
-      // Use Gemini AI for real audio analysis
-      if (GEMINI_API_KEY && req.file) {
-        if (req.file.size < 250) {
-          console.warn("Audio file is too small, fallback to local analysis");
-          usedFallback = true;
-        } else {
-          try {
-            const audioBase64 = req.file.buffer.toString('base64');
-            const mimeType = req.file.mimetype || 'audio/webm';
-
-            const prompt = `أنت أستاذ متخصص في النطق العربي الفصيح وعلم الأصوات.
-المستخدم قرأ النص العربي التالي بصوت عالٍ: "${text}"
-
-استمع للتسجيل الصوتي المرفق وقيّم نطقه.
-
-قاعدة هامة جداً: إذا لم تسمع أي صوت لغة بشرية واضح، أو إذا كان المقطع عبارة عن صمت، أو أصوات ضجيج فقط، أو كلام يختلف تماماً عن النص المطلوب، يجب عليك أن تعطي التقييم (score) صفر (0). لا تقم بمجاملة المستخدم أبداً.
-
-أعد JSON فقط بالشكل التالي (بدون أي نص آخر أو markdown):
-{
-  "score": [رقم من 0 إلى 100 يمثل دقة النطق. 0 إذا لم يكن هناك كلام واضح أو قراءة خاطئة تماماً],
-  "mistakes": [قائمة بالكلمات التي نُطقت بشكل خاطئ، كل عنصر: {"word": "الكلمة", "tip": "نصيحة قصيرة للتصحيح"}],
-  "feedback": "ملاحظة تشجيعية وبناءة بالعربية في جملة واحدة أو جملتين"
-}
-
-معايير التقييم:
-- 90-100: نطق ممتاز
-- 75-89: نطق جيد مع أخطاء بسيطة
-- 60-74: نطق مقبول مع أخطاء واضحة
-- 1-59: يحتاج تدريباً إضافياً
-- 0: لم يتم التقاط أية عينة كلام واضحة أو النص المقروء مختلف تماماً`;
-
-            const response = await generateContentWithFallbackAndRetry({
-              contents: [
-                prompt,
-                {
-                  inlineData: {
-                    mimeType,
-                    data: audioBase64
-                  }
-                }
-              ],
-              config: {
-                responseMimeType: "application/json"
-              }
-            });
-
-            const responseText = (response.text || "").trim()
-              .replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
-
-            const parsed = JSON.parse(responseText);
-            
-            let finalScore = 70;
-            if (parsed && typeof parsed.score !== 'undefined' && parsed.score !== null) {
-              const num = Number(parsed.score);
-              if (!isNaN(num)) {
-                finalScore = num;
-              }
-            }
-
-            analysisResult = {
-              score: Math.min(100, Math.max(0, finalScore)),
-              mistakes: Array.isArray(parsed.mistakes) ? parsed.mistakes : [],
-              feedback: parsed.feedback || "أحسنت، استمر في التدريب!",
-              isAi: true
-            };
-          } catch (aiError) {
-            console.warn("Gemini analysis failed, using native fallback:", aiError);
-            usedFallback = true;
-          }
-        }
-      } else {
-        usedFallback = true;
-      }
+      // Use native fallback analysis instead of Gemini AI
+      usedFallback = true;
 
       if (!analysisResult || usedFallback) {
         // Robust Fallback (Local evaluation of SpeechRecognition text)

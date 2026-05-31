@@ -10,6 +10,7 @@ interface UserData {
   level: string;
   goal: string;
   language_pref: string;
+  role?: string;
 }
 
 interface AuthState {

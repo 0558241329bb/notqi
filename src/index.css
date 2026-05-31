@@ -3,17 +3,17 @@
 
 @theme {
   --font-sans: "Cairo", ui-sans-serif, system-ui, sans-serif;
-
-  /* Category Themes */
   --color-primary: var(--app-primary);
   --color-secondary: var(--app-secondary);
   --color-accent: var(--app-accent);
+  --color-natqi-purple: #7C3AED;
+  --color-natqi-blue: #2563EB;
 }
 
 :root {
-  --app-primary: #3b82f6; /* default blue */
-  --app-secondary: #1e293b;
-  --app-accent: #f59e0b;
+  --app-primary: #7C3AED;
+  --app-secondary: #2563EB;
+  --app-accent: #8B5CF6;
 }
 
 .theme-children {
@@ -21,31 +21,45 @@
   --app-secondary: #ff9e00;
   --app-accent: #ff4d6d;
 }
-
 .theme-students {
-  --app-primary: #0077b6;
-  --app-secondary: #2d6a4f;
-  --app-accent: #0077b6;
+  --app-primary: #4F46E5;
+  --app-secondary: #0077b6;
+  --app-accent: #6366F1;
 }
-
 .theme-adults {
-  --app-primary: #14213d;
-  --app-secondary: #2a9d8f;
-  --app-accent: #2a9d8f;
+  --app-primary: #7C3AED;
+  --app-secondary: #2563EB;
+  --app-accent: #8B5CF6;
+}
+.theme-non-native {
+  --app-primary: #7C3AED;
+  --app-secondary: #fb8500;
+  --app-accent: #8B5CF6;
 }
 
-.theme-non-native {
-  --app-primary: #fb8500;
-  --app-secondary: #fefae0;
-  --app-accent: #fb8500;
+.natqi-gradient {
+  background: linear-gradient(135deg, #7C3AED 0%, #4F46E5 50%, #2563EB 100%);
+}
+
+.natqi-gradient-soft {
+  background: linear-gradient(160deg, #EDE9FE 0%, #DBEAFE 100%);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.glass-card-light {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(124, 58, 237, 0.10);
 }
 
 @layer base {
-  html {
-    @apply antialiased;
-  }
-  body {
-    @apply bg-slate-50 text-slate-900 min-h-screen font-sans;
-  }
+  html { @apply antialiased; }
+  body { @apply bg-slate-50 text-slate-900 min-h-screen font-sans; }
 }
-
