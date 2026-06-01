@@ -1,10 +1,9 @@
 {
-  "projectId": "gen-lang-client-0437449046",
-  "appId": "1:216913064660:web:0e5b23563ba0908b308141",
-  "apiKey": "AIzaSyBjfyBOrLMEgffBxvabF28mzgvamw1XPaU",
-  "authDomain": "gen-lang-client-0437449046.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-b36ba2a8-4bf6-4fbb-b8ab-7719d450111e",
-  "storageBucket": "gen-lang-client-0437449046.firebasestorage.app",
-  "messagingSenderId": "216913064660",
+  "projectId": "natqi-production",
+  "appId": "1:984230417506:web:32028fc3a6e059476c2d3b",
+  "apiKey": "AIzaSyAFiQtWOr8sem8OyDP1oh6wEDxG2Na3jM8",
+  "authDomain": "natqi-production.firebaseapp.com",
+  "storageBucket": "natqi-production.firebasestorage.app",
+  "messagingSenderId": "984230417506",
   "measurementId": ""
 }

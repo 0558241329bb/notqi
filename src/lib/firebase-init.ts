@@ -35,8 +35,9 @@ async function initFirebaseInternal() {
     sdkType = 'admin';
     console.log('Firebase Admin SDK initialized successfully');
   } else {
-    const { initializeApp } = await import('firebase/app');
-    const client = await import('firebase/firestore');
+    const firebaseMod = await import('firebase/compat/app');
+    await import('firebase/compat/firestore');
+    const firebase = firebaseMod.default;
 
     const firebaseConfig = {
       apiKey: process.env.FIREBASE_API_KEY || '',
@@ -47,13 +48,13 @@ async function initFirebaseInternal() {
       appId: process.env.FIREBASE_APP_ID || '',
     };
 
-    const app = initializeApp(firebaseConfig);
-    db = client.initializeFirestore(
-      app,
-      { experimentalForceLongPolling: true },
-      process.env.FIREBASE_DATABASE_ID || undefined,
-    );
-    FieldValueType = client;
+    const app = firebase.initializeApp(firebaseConfig);
+    if (process.env.FIREBASE_DATABASE_ID) {
+      db = (app.firestore as any)(process.env.FIREBASE_DATABASE_ID);
+    } else {
+      db = app.firestore();
+    }
+    FieldValueType = firebase.firestore.FieldValue;
     sdkType = 'client';
     console.log('Firebase Client SDK initialized (fallback)');
   }

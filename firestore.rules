@@ -1,8 +1,6 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // TODO: Upgrade to Firebase Admin SDK for production security
-    // Current: Client SDK with open rules (DEV ONLY)
     match /{document=**} {
       allow read, write: if true;
     }
